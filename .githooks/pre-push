@@ -1,0 +1,22 @@
+#!/bin/sh
+
+set -eu
+
+if ! command -v docker >/dev/null 2>&1; then
+    echo "Docker is required to run tests before push."
+    exit 1
+fi
+
+if [ ! -x ./bin/docker-php ]; then
+    echo "./bin/docker-php not found or is not executable."
+    exit 1
+fi
+
+echo "Running test suite before push..."
+
+if [ ! -x vendor/bin/phpunit ]; then
+    echo "vendor/bin/phpunit not found. Run composer install/update first."
+    exit 1
+fi
+
+./bin/docker-php "composer test"

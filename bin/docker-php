@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -eu
+
+IMAGE="${HASHIDS_DOCKER_IMAGE:-atldays/laravel-hashids-php}"
+
+docker build -f docker/php-cli/Dockerfile -t "$IMAGE" .
+
+docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "$PWD:/app" \
+    -w /app \
+    "$IMAGE" \
+    sh -lc "$*"
