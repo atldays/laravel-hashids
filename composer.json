@@ -1,0 +1,60 @@
+{
+    "name": "atldays/laravel-hashids",
+    "description": "Laravel Hashids package for generating short hashed identifiers for models and other numeric values.",
+    "keywords": [
+        "hash",
+        "hashid",
+        "id",
+        "laravel",
+        "atldays"
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "license": "proprietary",
+    "homepage": "https://github.com/atldays/laravel-hashids",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Anjey Tsibylskij",
+            "homepage": "https://github.com/atldays",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Atldays\\HashIds\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Atldays\\HashIds\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Atldays\\HashIds\\HashIdServiceProvider"
+            ],
+            "aliases": {
+                "HashIdRepository": "Atldays\\HashIds\\HashIdRepository"
+            }
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "hashids/hashids": "^5.0",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/contracts": "^10.0|^11.0|^12.0|^13.0",
+        "spatie/laravel-package-tools": "^1.93"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.21",
+        "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
+        "phpunit/phpunit": "^10.0|^11.0|^12.0"
+    },
+    "scripts": {
+        "format": "vendor/bin/pint",
+        "format:test": "vendor/bin/pint --test",
+        "test": "vendor/bin/phpunit tests"
+    }
+}
