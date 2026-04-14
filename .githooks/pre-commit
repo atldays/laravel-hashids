@@ -12,6 +12,7 @@ if [ ! -x ./bin/docker-php ]; then
     exit 1
 fi
 
+# shellcheck disable=SC2046
 set -- $(git diff --cached --name-only --diff-filter=ACMR -- '*.php')
 
 if [ "$#" -eq 0 ]; then
