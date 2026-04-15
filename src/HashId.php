@@ -12,7 +12,7 @@ class HashId
 
     public static function instance(string $salt, ?string $key = null): HashId
     {
-        return HashIdRepository::make($salt, $key);
+        return HashIdRegistry::make($salt, $key);
     }
 
     public function __construct(

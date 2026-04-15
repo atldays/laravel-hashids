@@ -4,7 +4,7 @@ namespace Atldays\HashIds;
 
 use Illuminate\Support\Facades\Facade;
 
-class HashIdRepository extends Facade
+class HashIdRegistry extends Facade
 {
     /**
      * Get the registered name of the component.

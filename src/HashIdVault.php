@@ -2,6 +2,9 @@
 
 namespace Atldays\HashIds;
 
+use Illuminate\Contracts\Container\BindingResolutionException;
+use Illuminate\Support\Facades\App;
+
 class HashIdVault
 {
     /**
@@ -9,9 +12,12 @@ class HashIdVault
      */
     private array $items = [];
 
+    /**
+     * @throws BindingResolutionException
+     */
     public function make(string $salt, ?string $key = null): HashId
     {
-        if (empty($key)) {
+        if ($key === null || $key === '') {
             $key = $salt;
         }
 
@@ -19,6 +25,6 @@ class HashIdVault
             return $this->items[$key];
         }
 
-        return $this->items[$key] = app(HashId::class)->setSalt($salt);
+        return $this->items[$key] = App::make(HashId::class)->setSalt($salt);
     }
 }
