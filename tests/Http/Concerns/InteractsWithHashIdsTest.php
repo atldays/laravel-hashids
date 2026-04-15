@@ -3,7 +3,9 @@
 namespace Atldays\HashIds\Tests\Http\Concerns;
 
 use Atldays\HashIds\Tests\Fixtures\Models\TestUser;
+use Atldays\HashIds\Tests\Fixtures\Models\TestUserByPublicId;
 use Atldays\HashIds\Tests\Fixtures\Requests\InheritedHashIdFormRequest;
+use Atldays\HashIds\Tests\Fixtures\Requests\TestHashIdByPublicIdFormRequest;
 use Atldays\HashIds\Tests\Fixtures\Requests\TestHashIdFormRequest;
 use Atldays\HashIds\Tests\TestCase;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -98,6 +100,28 @@ class InteractsWithHashIdsTest extends TestCase
         $this->assertNull($request->resolveHashedModel('author'));
     }
 
+    public function test_it_can_resolve_single_model_from_plain_value_when_http_hash_ids_are_disabled(): void
+    {
+        config()->set('hashid.http_enabled', false);
+
+        $author = TestUserByPublicId::query()->create([
+            'name' => 'Alice',
+            'public_id' => 456789,
+        ]);
+
+        $request = $this->makePublicIdRequest([
+            'author' => 456789,
+        ]);
+
+        $request->normalizeHashIds();
+
+        $model = $request->resolveHashedModel('author');
+
+        $this->assertInstanceOf(TestUserByPublicId::class, $model);
+        $this->assertSame($author->id, $model->id);
+        $this->assertSame(456789, $model->public_id);
+    }
+
     public function test_it_can_resolve_single_model_or_fail_from_decoded_hash_id_field(): void
     {
         config()->set('hashid.http_enabled', true);
@@ -159,6 +183,32 @@ class InteractsWithHashIdsTest extends TestCase
         $models = $request->resolveHashedModels('users');
 
         $this->assertCount(0, $models);
+    }
+
+    public function test_it_can_resolve_model_collection_from_plain_values_when_http_hash_ids_are_disabled(): void
+    {
+        config()->set('hashid.http_enabled', false);
+
+        $firstUser = TestUserByPublicId::query()->create([
+            'name' => 'Alice',
+            'public_id' => 456789,
+        ]);
+        $secondUser = TestUserByPublicId::query()->create([
+            'name' => 'Bob',
+            'public_id' => 567890,
+        ]);
+
+        $request = $this->makePublicIdRequest([
+            'users' => [456789, 567890],
+        ]);
+
+        $request->normalizeHashIds();
+
+        $models = $request->resolveHashedModels('users');
+
+        $this->assertCount(2, $models);
+        $this->assertSame([$firstUser->id, $secondUser->id], $models->pluck('id')->all());
+        $this->assertSame([456789, 567890], $models->pluck('public_id')->all());
     }
 
     public function test_it_decodes_hash_id_fields_using_dot_notation(): void
@@ -332,6 +382,16 @@ class InteractsWithHashIdsTest extends TestCase
 
         /** @var InheritedHashIdFormRequest $request */
         $request = InheritedHashIdFormRequest::createFromBase($baseRequest);
+
+        return $request;
+    }
+
+    private function makePublicIdRequest(array $input = []): TestHashIdByPublicIdFormRequest
+    {
+        $baseRequest = Request::create('/', 'GET', $input);
+
+        /** @var TestHashIdByPublicIdFormRequest $request */
+        $request = TestHashIdByPublicIdFormRequest::createFromBase($baseRequest);
 
         return $request;
     }
