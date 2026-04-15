@@ -27,6 +27,7 @@ class HasHashIdTest extends TestCase
     {
         $user = new TestUser(['name' => 'Alice']);
 
+        $this->assertNull($user->getHashId());
         $this->assertNull($user->hash_id);
     }
 
@@ -49,6 +50,12 @@ class HasHashIdTest extends TestCase
         $hashId = TestUser::encodeHashId(999);
 
         $this->assertNull(TestUser::findByHashId($hashId));
+    }
+
+    public function test_it_returns_null_for_empty_hash_id_values(): void
+    {
+        $this->assertNull(TestUser::findByHashId(null));
+        $this->assertNull(TestUser::findByHashId(''));
     }
 
     public function test_it_throws_for_invalid_hash_id(): void
@@ -85,6 +92,60 @@ class HasHashIdTest extends TestCase
 
         $this->assertInstanceOf(TestUser::class, $found);
         $this->assertSame($user->id, $found->id);
+    }
+
+    public function test_it_can_scope_query_by_hash_id(): void
+    {
+        config()->set('hashid.enable', true);
+
+        $firstUser = TestUser::query()->create(['name' => 'Alice']);
+        TestUser::query()->create(['name' => 'Bob']);
+
+        $found = TestUser::query()
+            ->whereHashId($firstUser->hash_id)
+            ->first();
+
+        $this->assertInstanceOf(TestUser::class, $found);
+        $this->assertSame($firstUser->id, $found->id);
+    }
+
+    public function test_it_returns_no_results_when_scope_hash_id_value_is_empty(): void
+    {
+        TestUser::query()->create(['name' => 'Alice']);
+
+        $results = TestUser::query()
+            ->whereHashId(null)
+            ->get();
+
+        $this->assertCount(0, $results);
+    }
+
+    public function test_it_can_scope_query_by_multiple_hash_ids(): void
+    {
+        config()->set('hashid.enable', true);
+
+        $firstUser = TestUser::query()->create(['name' => 'Alice']);
+        $secondUser = TestUser::query()->create(['name' => 'Bob']);
+        TestUser::query()->create(['name' => 'Charlie']);
+
+        $results = TestUser::query()
+            ->whereHashIds([$firstUser->hash_id, $secondUser->hash_id])
+            ->orderBy('id')
+            ->get();
+
+        $this->assertCount(2, $results);
+        $this->assertSame([$firstUser->id, $secondUser->id], $results->pluck('id')->all());
+    }
+
+    public function test_it_returns_no_results_when_scope_hash_ids_are_empty(): void
+    {
+        TestUser::query()->create(['name' => 'Alice']);
+
+        $results = TestUser::query()
+            ->whereHashIds([null, ''])
+            ->get();
+
+        $this->assertCount(0, $results);
     }
 
     public function test_it_can_use_custom_numeric_column_for_hash_id(): void
@@ -131,6 +192,15 @@ class HasHashIdTest extends TestCase
 
         $this->assertInstanceOf(TestUserWithRouteBinding::class, $resolved);
         $this->assertSame($user->id, $resolved->id);
+    }
+
+    public function test_it_returns_null_for_empty_route_binding_value(): void
+    {
+        config()->set('hashid.enable', true);
+
+        $resolved = (new TestUserWithRouteBinding)->resolveRouteBinding('');
+
+        $this->assertNull($resolved);
     }
 
     public function test_it_uses_only_hash_id_route_binding_in_strict_mode(): void

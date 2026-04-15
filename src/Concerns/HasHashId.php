@@ -5,6 +5,7 @@ namespace Atldays\HashIds\Concerns;
 use Atldays\HashIds\Exceptions\InvalidHashIdException;
 use Atldays\HashIds\Exceptions\ModelNotFoundByHashIdException;
 use Atldays\HashIds\HashId;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -79,7 +80,7 @@ trait HasHashId
         }
 
         return static::query()
-            ->where(static::getHashIdColumn(), $id)
+            ->where(static::getQualifiedHashIdColumn(), $id)
             ->first();
     }
 
@@ -99,7 +100,7 @@ trait HasHashId
         }
 
         $model = static::query()
-            ->where(static::getHashIdColumn(), $id)
+            ->where(static::getQualifiedHashIdColumn(), $id)
             ->first();
 
         if ($model instanceof static) {
@@ -132,11 +133,11 @@ trait HasHashId
     }
 
     /**
-     * Determine whether the provided route binding value is a plain numeric key.
+     * Get the fully qualified database column used for reverse lookups from hash IDs.
      */
-    protected static function isNumericRouteBindingValue(mixed $value): bool
+    protected static function getQualifiedHashIdColumn(): string
     {
-        return is_int($value) || (is_string($value) && ctype_digit($value));
+        return (new static)->qualifyColumn(static::getHashIdColumn());
     }
 
     /**
@@ -158,6 +159,48 @@ trait HasHashId
     }
 
     /**
+     * Scope a query by a single hash ID or compatible numeric source value.
+     *
+     * @throws InvalidHashIdException
+     */
+    public function scopeWhereHashId(Builder $query, int|string|null $value): Builder
+    {
+        $id = static::decodeHashId($value);
+
+        if ($id === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(static::getQualifiedHashIdColumn(), $id);
+    }
+
+    /**
+     * Scope a query by multiple hash IDs or compatible numeric source values.
+     *
+     * @param array<int, int|string|null> $values
+     *
+     * @throws InvalidHashIdException
+     */
+    public function scopeWhereHashIds(Builder $query, array $values): Builder
+    {
+        $ids = [];
+
+        foreach ($values as $value) {
+            $id = static::decodeHashId($value);
+
+            if ($id !== null) {
+                $ids[] = $id;
+            }
+        }
+
+        if ($ids === []) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereIn(static::getQualifiedHashIdColumn(), array_values(array_unique($ids)));
+    }
+
+    /**
      * Resolve a route binding using either the default Laravel behavior or hash IDs.
      *
      * @throws InvalidHashIdException
@@ -168,9 +211,16 @@ trait HasHashId
             return parent::resolveRouteBinding($value, $field);
         }
 
+        if ($value === null || $value === '') {
+            return null;
+        }
+
         $resolvedField = is_string($field) ? $field : $this->getRouteKeyName();
 
-        if (!static::hashIdInstance()->isStrict() && static::isNumericRouteBindingValue($value)) {
+        if (
+            !static::hashIdInstance()->isStrict()
+            && (is_int($value) || (is_string($value) && ctype_digit($value)))
+        ) {
             return $this->resolveRouteBindingQuery($this, $value, $resolvedField)->first();
         }
 
