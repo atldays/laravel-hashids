@@ -2,6 +2,8 @@
 
 namespace Atldays\HashIds;
 
+use Atldays\HashIds\Console\Commands\DecodeCommand;
+use Atldays\HashIds\Console\Commands\EncodeCommand;
 use Illuminate\Contracts\Config\Repository as ConfigContract;
 use Illuminate\Contracts\Foundation\Application;
 use Spatie\LaravelPackageTools\Package;
@@ -14,7 +16,11 @@ class HashIdServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-hashids')
             ->hasConfigFile('hashid')
-            ->hasTranslations();
+            ->hasTranslations()
+            ->hasCommands([
+                EncodeCommand::class,
+                DecodeCommand::class,
+            ]);
     }
 
     public function registeringPackage(): void
