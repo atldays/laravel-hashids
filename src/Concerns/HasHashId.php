@@ -4,6 +4,7 @@ namespace Atldays\HashIds\Concerns;
 
 use Atldays\HashIds\Exceptions\InvalidHashIdException;
 use Atldays\HashIds\HashId;
+use Atldays\HashIds\HashIdRegistry;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -26,7 +27,7 @@ trait HasHashId
     /**
      * Encode a numeric source value into a hash ID.
      */
-    public static function encodeHashId(?int $id): int|string|null
+    public static function encodeHashId(?int $id): ?string
     {
         if ($id === null) {
             return null;
@@ -47,16 +48,10 @@ trait HasHashId
         }
 
         if (!is_string($value)) {
-            throw InvalidHashIdException::forValue(static::class, $value);
+            throw InvalidHashIdException::forModel(static::class, $value);
         }
 
-        $decodedId = static::hashIdInstance()->decode($value);
-
-        if ($decodedId <= 0) {
-            throw InvalidHashIdException::forValue(static::class, $value);
-        }
-
-        return $decodedId;
+        return static::hashIdInstance()->decode($value);
     }
 
     /**
@@ -64,7 +59,7 @@ trait HasHashId
      */
     protected static function hashIdInstance(): HashId
     {
-        return HashId::instance(static::getHashIdSalt(), static::class);
+        return HashIdRegistry::make(static::getHashIdSalt(), static::class);
     }
 
     /**
@@ -92,7 +87,7 @@ trait HasHashId
     /**
      * Get the hashed representation for the current model instance.
      */
-    public function getHashId(): int|string|null
+    public function getHashId(): ?string
     {
         $key = $this->getHashIdValue();
 
@@ -102,7 +97,7 @@ trait HasHashId
     /**
      * Accessor for the computed hash ID attribute.
      */
-    public function getHashIdAttribute(): int|string|null
+    public function getHashIdAttribute(): ?string
     {
         return $this->getHashId();
     }

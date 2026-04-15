@@ -25,6 +25,6 @@ class HashIdVault
             return $this->items[$key];
         }
 
-        return $this->items[$key] = App::make(HashId::class)->setSalt($salt);
+        return $this->items[$key] = App::make(HashId::class, ['salt' => $salt]);
     }
 }

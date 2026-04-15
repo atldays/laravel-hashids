@@ -13,7 +13,7 @@ trait HasHashIdQueries
     protected static function assertHashIdString(string $value): void
     {
         if ($value === '') {
-            throw InvalidHashIdException::forValue(static::class, $value);
+            throw InvalidHashIdException::forModel(static::class, $value);
         }
     }
 
