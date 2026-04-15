@@ -102,11 +102,9 @@ trait InteractsWithHashIds
         $input = $this->all();
 
         foreach ($this->getHashIdFields() as $field => $model) {
-            if (!Arr::has($input, $field)) {
-                continue;
+            foreach ($this->resolveHashIdFieldPaths($input, $field) as $resolvedField) {
+                Arr::set($input, $resolvedField, $this->decodeHashIdFieldValue(Arr::get($input, $resolvedField), $model));
             }
-
-            Arr::set($input, $field, $this->decodeHashIdFieldValue(Arr::get($input, $field), $model));
         }
 
         $this->replace($input);
@@ -168,6 +166,16 @@ trait InteractsWithHashIds
         $model = $this->getHashIdFields()[$field] ?? null;
 
         if (!is_string($model)) {
+            foreach ($this->getHashIdFields() as $pattern => $patternModel) {
+                if ($this->hashIdFieldMatches($pattern, $field)) {
+                    $model = $patternModel;
+
+                    break;
+                }
+            }
+        }
+
+        if (!is_string($model)) {
             throw new InvalidArgumentException(sprintf('Hash ID field `%s` is not configured for `%s`.', $field, static::class));
         }
 
@@ -193,5 +201,72 @@ trait InteractsWithHashIds
         }
 
         return $model::decodeHashId($value);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function resolveHashIdFieldPaths(array $input, string $field): array
+    {
+        if (!str_contains($field, '*')) {
+            return Arr::has($input, $field) ? [$field] : [];
+        }
+
+        return $this->resolveWildcardHashIdFieldPaths($input, explode('.', $field));
+    }
+
+    protected function hashIdFieldMatches(string $pattern, string $field): bool
+    {
+        $patternSegments = explode('.', $pattern);
+        $fieldSegments = explode('.', $field);
+
+        if (count($patternSegments) !== count($fieldSegments)) {
+            return false;
+        }
+
+        foreach ($patternSegments as $index => $segment) {
+            if ($segment !== '*' && $segment !== $fieldSegments[$index]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array<int, string> $segments
+     * @param array<int, string> $prefix
+     * @return array<int, string>
+     */
+    protected function resolveWildcardHashIdFieldPaths(mixed $value, array $segments, array $prefix = []): array
+    {
+        if ($segments === []) {
+            return [implode('.', $prefix)];
+        }
+
+        $segment = array_shift($segments);
+
+        if ($segment === '*') {
+            if (!is_array($value)) {
+                return [];
+            }
+
+            $paths = [];
+
+            foreach (array_keys($value) as $key) {
+                $paths = array_merge(
+                    $paths,
+                    $this->resolveWildcardHashIdFieldPaths($value[$key], $segments, [...$prefix, (string)$key]),
+                );
+            }
+
+            return $paths;
+        }
+
+        if (!is_array($value) || !array_key_exists($segment, $value)) {
+            return [];
+        }
+
+        return $this->resolveWildcardHashIdFieldPaths($value[$segment], $segments, [...$prefix, $segment]);
     }
 }

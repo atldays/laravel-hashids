@@ -10,6 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
 
 #[HashIdField('users', TestUser::class)]
 #[HashIdField('filters.users', TestUser::class)]
+#[HashIdField('items.*.users', TestUser::class)]
 class TestHashIdFormRequest extends FormRequest
 {
     use InteractsWithHashIds;
@@ -20,6 +21,7 @@ class TestHashIdFormRequest extends FormRequest
     protected array $hashIdFields = [
         'author' => TestUser::class,
         'filters.author' => TestUser::class,
+        'items.*.author' => TestUser::class,
     ];
 
     public function rules(): array

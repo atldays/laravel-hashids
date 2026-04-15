@@ -21,8 +21,10 @@ class InteractsWithHashIdsTest extends TestCase
         $this->assertSame([
             'author' => TestUser::class,
             'filters.author' => TestUser::class,
+            'items.*.author' => TestUser::class,
             'users' => TestUser::class,
             'filters.users' => TestUser::class,
+            'items.*.users' => TestUser::class,
         ], $request->resolvedHashIdFields());
     }
 
@@ -33,8 +35,10 @@ class InteractsWithHashIdsTest extends TestCase
         $this->assertSame([
             'author' => TestUser::class,
             'filters.author' => TestUser::class,
+            'items.*.author' => TestUser::class,
             'users' => TestUser::class,
             'filters.users' => TestUser::class,
+            'items.*.users' => TestUser::class,
             'inherited.users' => TestUser::class,
         ], $request->resolvedHashIdFields());
     }
@@ -232,6 +236,29 @@ class InteractsWithHashIdsTest extends TestCase
         $this->assertSame([$firstUser->id, $secondUser->id], $request->input('filters.users'));
     }
 
+    public function test_it_decodes_hash_id_fields_using_wildcard_notation(): void
+    {
+        config()->set('hashid.http_enabled', true);
+
+        $author = TestUser::query()->create(['name' => 'Alice']);
+        $firstUser = TestUser::query()->create(['name' => 'Bob']);
+        $secondUser = TestUser::query()->create(['name' => 'Charlie']);
+
+        $request = $this->makeRequest([
+            'items' => [
+                [
+                    'author' => $author->hash_id,
+                    'users' => [$firstUser->hash_id, $secondUser->hash_id],
+                ],
+            ],
+        ]);
+
+        $request->normalizeHashIds();
+
+        $this->assertSame($author->id, $request->input('items.0.author'));
+        $this->assertSame([$firstUser->id, $secondUser->id], $request->input('items.0.users'));
+    }
+
     public function test_it_decodes_inherited_hash_id_field_attributes(): void
     {
         config()->set('hashid.http_enabled', true);
@@ -286,6 +313,51 @@ class InteractsWithHashIdsTest extends TestCase
         $request->normalizeHashIds();
 
         $models = $request->resolveHashedModels('filters.users');
+
+        $this->assertCount(2, $models);
+        $this->assertSame([$firstUser->id, $secondUser->id], $models->pluck('id')->all());
+    }
+
+    public function test_it_can_resolve_single_model_or_fail_from_wildcard_hash_id_field(): void
+    {
+        config()->set('hashid.http_enabled', true);
+
+        $author = TestUser::query()->create(['name' => 'Alice']);
+
+        $request = $this->makeRequest([
+            'items' => [
+                [
+                    'author' => $author->hash_id,
+                ],
+            ],
+        ]);
+
+        $request->normalizeHashIds();
+
+        $model = $request->resolveHashedModelOrFail('items.0.author');
+
+        $this->assertInstanceOf(TestUser::class, $model);
+        $this->assertSame($author->id, $model->id);
+    }
+
+    public function test_it_can_resolve_model_collection_from_wildcard_hash_id_field(): void
+    {
+        config()->set('hashid.http_enabled', true);
+
+        $firstUser = TestUser::query()->create(['name' => 'Alice']);
+        $secondUser = TestUser::query()->create(['name' => 'Bob']);
+
+        $request = $this->makeRequest([
+            'items' => [
+                [
+                    'users' => [$firstUser->hash_id, $secondUser->hash_id],
+                ],
+            ],
+        ]);
+
+        $request->normalizeHashIds();
+
+        $models = $request->resolveHashedModels('items.0.users');
 
         $this->assertCount(2, $models);
         $this->assertSame([$firstUser->id, $secondUser->id], $models->pluck('id')->all());
