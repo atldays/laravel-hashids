@@ -2,6 +2,7 @@
 
 namespace Atldays\HashIds\Http\Concerns;
 
+use Atldays\HashIds\Concerns\HasHashId;
 use Atldays\HashIds\Http\Attributes\HashIdField;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,7 @@ trait InteractsWithHashIds
      */
     public function hashedModel(string $field): ?Model
     {
+        /** @var $model Model&HasHashId */
         $model = $this->getHashIdFieldModel($field);
         $value = $this->input($field);
 
@@ -37,6 +39,7 @@ trait InteractsWithHashIds
      */
     public function hashedModelOrFail(string $field): Model
     {
+        /** @var $model Model&HasHashId */
         $model = $this->getHashIdFieldModel($field);
         $value = $this->input($field);
 
@@ -92,7 +95,7 @@ trait InteractsWithHashIds
             parent::passedValidation();
         }
 
-        if (!$this->hashIdHttpEnabled()) {
+        if (!Config::get('hashid.http_enabled', true)) {
             return;
         }
 
@@ -110,31 +113,55 @@ trait InteractsWithHashIds
     }
 
     /**
-     * @return array<string, class-string<Model>>
+     * @return array<string, class-string<Model&HasHashId>>
      */
     protected function getHashIdFields(): array
     {
         $fields = [];
 
         if (property_exists($this, 'hashIdFields')) {
-            /** @var array<string, class-string<Model>> $propertyFields */
+            /** @var array<string, class-string<Model&HasHashId>> $propertyFields */
             $propertyFields = $this->hashIdFields;
 
             $fields = $propertyFields;
         }
 
-        foreach ((new ReflectionClass($this))->getAttributes(HashIdField::class) as $attribute) {
-            /** @var HashIdField $instance */
-            $instance = $attribute->newInstance();
-
-            $fields[$instance->field] = $instance->model;
+        foreach ($this->getHashIdFieldAttributes() as $attribute) {
+            $fields[$attribute->field] = $attribute->model;
         }
 
         return $fields;
     }
 
     /**
-     * @return class-string<Model>
+     * @return array<int, HashIdField>
+     */
+    protected function getHashIdFieldAttributes(): array
+    {
+        $classes = [];
+        $reflection = new ReflectionClass($this);
+
+        do {
+            $classes[] = $reflection;
+            $reflection = $reflection->getParentClass();
+        } while ($reflection !== false);
+
+        $attributes = [];
+
+        foreach (array_reverse($classes) as $class) {
+            foreach ($class->getAttributes(HashIdField::class) as $attribute) {
+                /** @var HashIdField $instance */
+                $instance = $attribute->newInstance();
+
+                $attributes[] = $instance;
+            }
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * @return class-string<Model&HasHashId>
      */
     protected function getHashIdFieldModel(string $field): string
     {
@@ -147,6 +174,11 @@ trait InteractsWithHashIds
         return $model;
     }
 
+    /**
+     * Decode a configured hash ID field value to its plain model value.
+     *
+     * @param class-string<Model&HasHashId> $model
+     */
     protected function decodeHashIdFieldValue(mixed $value, string $model): mixed
     {
         if (is_array($value)) {
@@ -161,10 +193,5 @@ trait InteractsWithHashIds
         }
 
         return $model::decodeHashId($value);
-    }
-
-    protected function hashIdHttpEnabled(): bool
-    {
-        return (bool)Config::get('hashid.http_enabled', true);
     }
 }

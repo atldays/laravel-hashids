@@ -40,7 +40,7 @@ trait HasHashIdQueries
     /**
      * Find multiple models by their decoded hash ID source values.
      *
-     * @param  array<int, int>  $values
+     * @param array<int, int> $values
      * @return Collection<int, static>
      */
     public static function findManyByHashIdValues(array $values): Collection
@@ -86,7 +86,7 @@ trait HasHashIdQueries
     /**
      * Find multiple models by their hash IDs.
      *
-     * @param  array<int, string>  $values
+     * @param array<int, string> $values
      * @return Collection<int, static>
      *
      * @throws InvalidHashIdException
@@ -142,7 +142,7 @@ trait HasHashIdQueries
     /**
      * Find a model by its hash ID or return a fresh model instance.
      *
-     * @param  array<string, mixed>  $attributes
+     * @param array<string, mixed> $attributes
      *
      * @throws InvalidHashIdException
      */
@@ -188,7 +188,7 @@ trait HasHashIdQueries
     /**
      * Scope a query by multiple hash IDs.
      *
-     * @param  array<int, string>  $values
+     * @param array<int, string> $values
      *
      * @throws InvalidHashIdException
      */
@@ -210,7 +210,7 @@ trait HasHashIdQueries
     /**
      * Scope a query by excluding multiple hash IDs.
      *
-     * @param  array<int, string>  $values
+     * @param array<int, string> $values
      *
      * @throws InvalidHashIdException
      */

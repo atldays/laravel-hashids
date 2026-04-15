@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 readonly class HashIdField
 {
     /**
-     * @param  class-string<Model>  $model
+     * @param class-string<Model> $model
      */
     public function __construct(
         public string $field,

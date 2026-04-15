@@ -3,6 +3,7 @@
 namespace Atldays\HashIds\Tests\Http\Concerns;
 
 use Atldays\HashIds\Tests\Fixtures\Models\TestUser;
+use Atldays\HashIds\Tests\Fixtures\Requests\InheritedHashIdFormRequest;
 use Atldays\HashIds\Tests\Fixtures\Requests\TestHashIdFormRequest;
 use Atldays\HashIds\Tests\TestCase;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -20,6 +21,19 @@ class InteractsWithHashIdsTest extends TestCase
             'filters.author' => TestUser::class,
             'users' => TestUser::class,
             'filters.users' => TestUser::class,
+        ], $request->resolvedHashIdFields());
+    }
+
+    public function test_it_collects_hash_id_fields_from_parent_request_attributes(): void
+    {
+        $request = $this->makeInheritedRequest();
+
+        $this->assertSame([
+            'author' => TestUser::class,
+            'filters.author' => TestUser::class,
+            'users' => TestUser::class,
+            'filters.users' => TestUser::class,
+            'inherited.users' => TestUser::class,
         ], $request->resolvedHashIdFields());
     }
 
@@ -168,6 +182,24 @@ class InteractsWithHashIdsTest extends TestCase
         $this->assertSame([$firstUser->id, $secondUser->id], $request->input('filters.users'));
     }
 
+    public function test_it_decodes_inherited_hash_id_field_attributes(): void
+    {
+        config()->set('hashid.http_enabled', true);
+
+        $firstUser = TestUser::query()->create(['name' => 'Alice']);
+        $secondUser = TestUser::query()->create(['name' => 'Bob']);
+
+        $request = $this->makeInheritedRequest([
+            'inherited' => [
+                'users' => [$firstUser->hash_id, $secondUser->hash_id],
+            ],
+        ]);
+
+        $request->normalizeHashIds();
+
+        $this->assertSame([$firstUser->id, $secondUser->id], $request->input('inherited.users'));
+    }
+
     public function test_it_can_resolve_single_model_from_dot_notation_hash_id_field(): void
     {
         config()->set('hashid.http_enabled', true);
@@ -290,6 +322,16 @@ class InteractsWithHashIdsTest extends TestCase
 
         /** @var TestHashIdFormRequest $request */
         $request = TestHashIdFormRequest::createFromBase($baseRequest);
+
+        return $request;
+    }
+
+    private function makeInheritedRequest(array $input = []): InheritedHashIdFormRequest
+    {
+        $baseRequest = Request::create('/', 'GET', $input);
+
+        /** @var InheritedHashIdFormRequest $request */
+        $request = InheritedHashIdFormRequest::createFromBase($baseRequest);
 
         return $request;
     }

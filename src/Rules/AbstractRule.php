@@ -27,7 +27,7 @@ abstract class AbstractRule implements ValidationRule
     abstract protected function passesValue(mixed $value): bool;
 
     /**
-     * @param  class-string<Model>  $model
+     * @param class-string<Model> $model
      */
     public function __construct(
         protected readonly string $model,
