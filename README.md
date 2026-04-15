@@ -17,7 +17,7 @@ Instead of handling encoding, decoding, validation, routing and API output in di
 - serialized API output
 - model-aware artisan commands
 
-Under the hood, it is powered by [`hashids/hashids`](https://github.com/vinkla/hashids), while adding a Laravel-first developer experience around models, requests, validation and routing.
+Under the hood, it is powered by [`hashids/hashids`](https://packagist.org/packages/hashids/hashids), while adding a Laravel-first developer experience around models, requests, validation and routing.
 
 Your application can keep working with plain numeric values internally, while the outside world works with hash IDs in a predictable way.
 
@@ -47,6 +47,8 @@ Publish the config file if you want to customize the defaults:
 ```bash
 php artisan vendor:publish --provider="Atldays\\HashIds\\HashIdServiceProvider" --tag="laravel-hashids-config"
 ```
+
+If you plan to contribute, please also read [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Quick Start
 
@@ -208,7 +210,7 @@ $request->validate([
 
 The rules are `nullable`-friendly by design, so they work naturally with Laravel rules like `required` and `nullable`.
 
-Validation messages are translated through the package lang files, and you can override them in your application the same way you override other Laravel package translations.
+Validation messages are translated through the package translation files, and you can override them in your application the same way you override other Laravel package translations.
 
 First publish the package translations:
 
