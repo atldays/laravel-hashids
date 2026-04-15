@@ -77,7 +77,7 @@ class HasHashIdTest extends TestCase
 
     public function test_it_throws_model_not_found_exception_for_missing_model(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $hashId = TestUser::encodeHashId(999);
 
@@ -118,7 +118,7 @@ class HasHashIdTest extends TestCase
 
     public function test_it_can_find_model_or_return_new_instance_by_hash_id(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $user = TestUser::query()->create(['name' => 'Alice']);
 
@@ -196,7 +196,7 @@ class HasHashIdTest extends TestCase
 
     public function test_it_can_exclude_multiple_hash_ids_from_query(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $firstUser = TestUser::query()->create(['name' => 'Alice']);
         $secondUser = TestUser::query()->create(['name' => 'Bob']);
@@ -286,7 +286,7 @@ class HasHashIdTest extends TestCase
 
     public function test_it_can_resolve_route_binding_by_plain_id_when_http_hash_ids_are_disabled(): void
     {
-        config()->set('hashid.http_enabled', false);
+        config()->set('hashid.enabled', false);
 
         $user = TestUserWithRouteBinding::query()->create(['name' => 'Alice']);
 
@@ -298,7 +298,7 @@ class HasHashIdTest extends TestCase
 
     public function test_it_can_resolve_route_binding_by_hash_id(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $user = TestUserWithRouteBinding::query()->create(['name' => 'Alice']);
 
@@ -310,7 +310,7 @@ class HasHashIdTest extends TestCase
 
     public function test_it_returns_hash_id_as_route_key_when_routing_trait_is_used(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $user = TestUserWithRouteBinding::query()->create(['name' => 'Alice']);
 
@@ -319,7 +319,7 @@ class HasHashIdTest extends TestCase
 
     public function test_it_returns_plain_id_as_route_key_when_http_hash_ids_are_disabled(): void
     {
-        config()->set('hashid.http_enabled', false);
+        config()->set('hashid.enabled', false);
 
         $user = TestUserWithRouteBinding::query()->create(['name' => 'Alice']);
 
@@ -328,7 +328,7 @@ class HasHashIdTest extends TestCase
 
     public function test_it_returns_null_for_empty_route_binding_value(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $resolved = (new TestUserWithRouteBinding)->resolveRouteBinding('');
 
@@ -337,7 +337,7 @@ class HasHashIdTest extends TestCase
 
     public function test_it_rejects_plain_id_route_binding_when_http_hash_ids_are_enabled(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $user = TestUserWithRouteBinding::query()->create(['name' => 'Alice']);
 

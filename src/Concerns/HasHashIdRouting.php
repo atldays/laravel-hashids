@@ -13,7 +13,7 @@ trait HasHashIdRouting
      */
     public function getRouteKey(): mixed
     {
-        if (!(bool)Config::get('hashid.http_enabled', true)) {
+        if (!Config::get('hashid.enabled', true)) {
             return parent::getRouteKey();
         }
 
@@ -32,7 +32,7 @@ trait HasHashIdRouting
         }
 
         if (
-            !(bool)Config::get('hashid.http_enabled', true)
+            !Config::get('hashid.enabled', true)
             && (is_int($value) || (is_string($value) && ctype_digit($value)))
         ) {
             $resolvedField = is_string($field) ? $field : $this->getRouteKeyName();

@@ -35,7 +35,7 @@ abstract class TestCase extends Orchestra
             'database' => ':memory:',
             'prefix' => '',
         ]);
-        $app['config']->set('hashid.http_enabled', false);
+        $app['config']->set('hashid.enabled', false);
         $app['config']->set('hashid.length', 12);
     }
 

@@ -15,7 +15,7 @@ class HashIdRuleTest extends TestCase
 {
     public function test_it_validates_single_hash_id(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $user = TestUser::query()->create(['name' => 'Alice']);
 
@@ -29,7 +29,7 @@ class HashIdRuleTest extends TestCase
 
     public function test_it_rejects_invalid_single_hash_id(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $validator = Validator::make(
             ['user' => 'invalid-hash'],
@@ -45,7 +45,7 @@ class HashIdRuleTest extends TestCase
 
     public function test_it_validates_array_of_hash_ids(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $firstUser = TestUser::query()->create(['name' => 'Alice']);
         $secondUser = TestUser::query()->create(['name' => 'Bob']);
@@ -60,7 +60,7 @@ class HashIdRuleTest extends TestCase
 
     public function test_it_rejects_array_with_invalid_hash_id(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $user = TestUser::query()->create(['name' => 'Alice']);
 
@@ -78,7 +78,7 @@ class HashIdRuleTest extends TestCase
 
     public function test_it_allows_numeric_values_when_http_hash_ids_are_disabled(): void
     {
-        config()->set('hashid.http_enabled', false);
+        config()->set('hashid.enabled', false);
 
         $user = TestUser::query()->create(['name' => 'Alice']);
 
@@ -92,7 +92,7 @@ class HashIdRuleTest extends TestCase
 
     public function test_it_rejects_numeric_values_when_http_hash_ids_are_enabled(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $user = TestUser::query()->create(['name' => 'Alice']);
 
@@ -170,7 +170,7 @@ class HashIdRuleTest extends TestCase
 
     public function test_it_validates_existing_single_hash_id(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $user = TestUser::query()->create(['name' => 'Alice']);
 
@@ -184,7 +184,7 @@ class HashIdRuleTest extends TestCase
 
     public function test_it_validates_existing_numeric_value_by_custom_hash_id_column_when_http_hash_ids_are_disabled(): void
     {
-        config()->set('hashid.http_enabled', false);
+        config()->set('hashid.enabled', false);
 
         TestUserByPublicId::query()->create([
             'name' => 'Alice',
@@ -201,7 +201,7 @@ class HashIdRuleTest extends TestCase
 
     public function test_it_rejects_missing_single_hash_id(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $validator = Validator::make(
             ['user' => TestUser::encodeHashId(999)],
@@ -217,7 +217,7 @@ class HashIdRuleTest extends TestCase
 
     public function test_it_validates_array_of_existing_hash_ids(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $firstUser = TestUser::query()->create(['name' => 'Alice']);
         $secondUser = TestUser::query()->create(['name' => 'Bob']);
@@ -232,7 +232,7 @@ class HashIdRuleTest extends TestCase
 
     public function test_it_rejects_array_with_missing_hash_id(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $user = TestUser::query()->create(['name' => 'Alice']);
 

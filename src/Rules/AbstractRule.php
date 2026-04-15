@@ -66,7 +66,7 @@ abstract class AbstractRule implements ValidationRule
 
     protected function isEnabled(): bool
     {
-        return (bool)Config::get('hashid.http_enabled', true);
+        return (bool)Config::get('hashid.enabled', true);
     }
 
     protected function isSkippableValue(mixed $value): bool

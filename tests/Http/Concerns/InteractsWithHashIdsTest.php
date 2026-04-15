@@ -45,7 +45,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_decodes_single_and_array_hash_id_fields_after_validation(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $author = TestUser::query()->create(['name' => 'Alice']);
         $firstUser = TestUser::query()->create(['name' => 'Bob']);
@@ -77,7 +77,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_can_resolve_single_model_from_decoded_hash_id_field(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $author = TestUser::query()->create(['name' => 'Alice']);
 
@@ -106,7 +106,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_can_resolve_single_model_from_plain_value_when_http_hash_ids_are_disabled(): void
     {
-        config()->set('hashid.http_enabled', false);
+        config()->set('hashid.enabled', false);
 
         $author = TestUserByPublicId::query()->create([
             'name' => 'Alice',
@@ -128,7 +128,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_can_resolve_single_model_or_fail_from_decoded_hash_id_field(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $author = TestUser::query()->create(['name' => 'Alice']);
 
@@ -159,7 +159,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_can_resolve_model_collection_from_decoded_hash_id_field(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $firstUser = TestUser::query()->create(['name' => 'Alice']);
         $secondUser = TestUser::query()->create(['name' => 'Bob']);
@@ -191,7 +191,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_can_resolve_model_collection_from_plain_values_when_http_hash_ids_are_disabled(): void
     {
-        config()->set('hashid.http_enabled', false);
+        config()->set('hashid.enabled', false);
 
         $firstUser = TestUserByPublicId::query()->create([
             'name' => 'Alice',
@@ -217,7 +217,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_decodes_hash_id_fields_using_dot_notation(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $author = TestUser::query()->create(['name' => 'Alice']);
         $firstUser = TestUser::query()->create(['name' => 'Bob']);
@@ -238,7 +238,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_decodes_hash_id_fields_using_wildcard_notation(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $author = TestUser::query()->create(['name' => 'Alice']);
         $firstUser = TestUser::query()->create(['name' => 'Bob']);
@@ -261,7 +261,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_decodes_inherited_hash_id_field_attributes(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $firstUser = TestUser::query()->create(['name' => 'Alice']);
         $secondUser = TestUser::query()->create(['name' => 'Bob']);
@@ -279,7 +279,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_can_resolve_single_model_from_dot_notation_hash_id_field(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $author = TestUser::query()->create(['name' => 'Alice']);
 
@@ -299,7 +299,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_can_resolve_model_collection_from_dot_notation_hash_id_field(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $firstUser = TestUser::query()->create(['name' => 'Alice']);
         $secondUser = TestUser::query()->create(['name' => 'Bob']);
@@ -320,7 +320,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_can_resolve_single_model_or_fail_from_wildcard_hash_id_field(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $author = TestUser::query()->create(['name' => 'Alice']);
 
@@ -342,7 +342,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_can_resolve_model_collection_from_wildcard_hash_id_field(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $firstUser = TestUser::query()->create(['name' => 'Alice']);
         $secondUser = TestUser::query()->create(['name' => 'Bob']);
@@ -375,7 +375,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_throws_when_resolving_single_model_from_array_hash_id_field(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $user = TestUser::query()->create(['name' => 'Alice']);
 
@@ -393,7 +393,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_throws_when_resolving_single_model_or_fail_from_array_hash_id_field(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $user = TestUser::query()->create(['name' => 'Alice']);
 
@@ -422,7 +422,7 @@ class InteractsWithHashIdsTest extends TestCase
 
     public function test_it_throws_when_resolving_model_collection_from_scalar_hash_id_field(): void
     {
-        config()->set('hashid.http_enabled', true);
+        config()->set('hashid.enabled', true);
 
         $user = TestUser::query()->create(['name' => 'Alice']);
 

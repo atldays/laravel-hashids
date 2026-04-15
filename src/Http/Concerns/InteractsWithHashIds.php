@@ -95,7 +95,7 @@ trait InteractsWithHashIds
             parent::passedValidation();
         }
 
-        if (!Config::get('hashid.http_enabled', true)) {
+        if (!Config::get('hashid.enabled', true)) {
             return;
         }
 
