@@ -10,7 +10,7 @@
     ],
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "license": "proprietary",
+    "license": "MIT",
     "homepage": "https://github.com/atldays/laravel-hashids",
     "type": "library",
     "authors": [
@@ -36,6 +36,7 @@
                 "Atldays\\HashIds\\HashIdServiceProvider"
             ],
             "aliases": {
+                "HashIds": "Atldays\\HashIds\\HashIds",
                 "HashIdRegistry": "Atldays\\HashIds\\HashIdRegistry"
             }
         }
