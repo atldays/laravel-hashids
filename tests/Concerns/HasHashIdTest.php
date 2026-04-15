@@ -7,11 +7,14 @@ use Atldays\HashIds\Exceptions\ModelNotFoundByHashIdException;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUser;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUserByPublicId;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUserByPublicIdAttribute;
+use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithConflictingClassSalt;
+use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithConflictingTraitSalt;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithModelSalt;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithRouteBinding;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithTableSalt;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithTraitSalt;
 use Atldays\HashIds\Tests\TestCase;
+use InvalidArgumentException;
 
 class HasHashIdTest extends TestCase
 {
@@ -282,6 +285,22 @@ class HasHashIdTest extends TestCase
     public function test_it_can_use_hash_id_salt_from_table_attribute(): void
     {
         $this->assertSame('test_users', TestUserWithTableSalt::getHashIdSalt());
+    }
+
+    public function test_it_rejects_conflicting_hash_id_salt_attributes_on_the_same_class(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('conflicting hash ID salt attributes on the class itself');
+
+        TestUserWithConflictingClassSalt::getHashIdSalt();
+    }
+
+    public function test_it_rejects_conflicting_hash_id_salt_attributes_across_traits_on_the_same_level(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('conflicting hash ID salt attributes on its traits');
+
+        TestUserWithConflictingTraitSalt::getHashIdSalt();
     }
 
     public function test_it_can_resolve_route_binding_by_plain_id_when_http_hash_ids_are_disabled(): void

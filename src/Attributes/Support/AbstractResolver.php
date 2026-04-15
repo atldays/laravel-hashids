@@ -47,6 +47,22 @@ abstract class AbstractResolver
     /**
      * @return array<int, object>
      */
+    protected function resolveOwnAttributes(ReflectionClass $class): array
+    {
+        $attributes = [];
+
+        foreach ($this->attributeClasses() as $attributeClass) {
+            foreach ($class->getAttributes($attributeClass) as $attribute) {
+                $attributes[] = $attribute->newInstance();
+            }
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * @return array<int, object>
+     */
     protected function collectAttributes(ReflectionClass $class): array
     {
         $attributes = [];
