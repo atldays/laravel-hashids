@@ -5,7 +5,6 @@ namespace Atldays\HashIds\Tests;
 use Atldays\HashIds\Exceptions\InvalidHashIdException;
 use Atldays\HashIds\HashId;
 use Atldays\HashIds\HashIdRegistry;
-use Illuminate\Support\Facades\App;
 
 class HashIdTest extends TestCase
 {
@@ -23,7 +22,7 @@ class HashIdTest extends TestCase
 
     public function test_it_can_be_resolved_with_custom_salt(): void
     {
-        $hashId = App::make(HashId::class, ['salt' => 'another_salt']);
+        $hashId = HashId::make(salt: 'another_salt');
 
         $this->assertInstanceOf(HashId::class, $hashId);
         $this->assertNotSame($hashId->encode(123), HashIdRegistry::make('test_salt')->encode(123));
