@@ -2,7 +2,9 @@
 
 namespace Atldays\HashIds\Tests\Fixtures\Models;
 
+use Atldays\HashIds\Concerns\HasHashIdRouting;
+
 class TestUserWithRouteBinding extends TestUser
 {
-    protected bool $usesHashIdRouteBinding = true;
+    use HasHashIdRouting;
 }

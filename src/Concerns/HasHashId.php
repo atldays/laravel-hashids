@@ -3,9 +3,7 @@
 namespace Atldays\HashIds\Concerns;
 
 use Atldays\HashIds\Exceptions\InvalidHashIdException;
-use Atldays\HashIds\Exceptions\ModelNotFoundByHashIdException;
 use Atldays\HashIds\HashId;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -15,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 trait HasHashId
 {
+    use HasHashIdQueries;
+
     /**
      * Get the salt used to build hash IDs for the current model.
      */
@@ -46,14 +46,8 @@ trait HasHashId
             return null;
         }
 
-        if (is_int($value)) {
-            return $value > 0 ? $value : null;
-        }
-
-        if (!static::hashIdInstance()->isStrict() && ctype_digit($value)) {
-            $id = (int)$value;
-
-            return $id > 0 ? $id : null;
+        if (!is_string($value)) {
+            throw InvalidHashIdException::forValue(static::class, $value);
         }
 
         $decodedId = static::hashIdInstance()->decode($value);
@@ -63,51 +57,6 @@ trait HasHashId
         }
 
         return $decodedId;
-    }
-
-    /**
-     * Find a model by its hash ID or compatible numeric source value.
-     *
-     *
-     * @throws InvalidHashIdException
-     */
-    public static function findByHashId(int|string|null $value): ?static
-    {
-        $id = static::decodeHashId($value);
-
-        if ($id === null) {
-            return null;
-        }
-
-        return static::query()
-            ->where(static::getQualifiedHashIdColumn(), $id)
-            ->first();
-    }
-
-    /**
-     * Find a model by its hash ID or fail with a dedicated exception.
-     *
-     *
-     * @throws InvalidHashIdException
-     * @throws ModelNotFoundByHashIdException
-     */
-    public static function findOrFailByHashId(int|string|null $value): static
-    {
-        $id = static::decodeHashId($value);
-
-        if ($id === null) {
-            throw ModelNotFoundByHashIdException::forModel(static::class, $value);
-        }
-
-        $model = static::query()
-            ->where(static::getQualifiedHashIdColumn(), $id)
-            ->first();
-
-        if ($model instanceof static) {
-            return $model;
-        }
-
-        throw ModelNotFoundByHashIdException::forModel(static::class, $value, $id);
     }
 
     /**
@@ -156,90 +105,6 @@ trait HasHashId
     public function getHashIdAttribute(): int|string|null
     {
         return $this->getHashId();
-    }
-
-    /**
-     * Scope a query by a single hash ID or compatible numeric source value.
-     *
-     * @throws InvalidHashIdException
-     */
-    public function scopeWhereHashId(Builder $query, int|string|null $value): Builder
-    {
-        $id = static::decodeHashId($value);
-
-        if ($id === null) {
-            return $query->whereRaw('1 = 0');
-        }
-
-        return $query->where(static::getQualifiedHashIdColumn(), $id);
-    }
-
-    /**
-     * Scope a query by multiple hash IDs or compatible numeric source values.
-     *
-     * @param array<int, int|string|null> $values
-     *
-     * @throws InvalidHashIdException
-     */
-    public function scopeWhereHashIds(Builder $query, array $values): Builder
-    {
-        $ids = [];
-
-        foreach ($values as $value) {
-            $id = static::decodeHashId($value);
-
-            if ($id !== null) {
-                $ids[] = $id;
-            }
-        }
-
-        if ($ids === []) {
-            return $query->whereRaw('1 = 0');
-        }
-
-        return $query->whereIn(static::getQualifiedHashIdColumn(), array_values(array_unique($ids)));
-    }
-
-    /**
-     * Resolve a route binding using either the default Laravel behavior or hash IDs.
-     *
-     * @throws InvalidHashIdException
-     */
-    public function resolveRouteBinding($value, $field = null): ?Model
-    {
-        if (!$this->usesHashIdRouteBinding()) {
-            return parent::resolveRouteBinding($value, $field);
-        }
-
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        $resolvedField = is_string($field) ? $field : $this->getRouteKeyName();
-
-        if (
-            !static::hashIdInstance()->isStrict()
-            && (is_int($value) || (is_string($value) && ctype_digit($value)))
-        ) {
-            return $this->resolveRouteBindingQuery($this, $value, $resolvedField)->first();
-        }
-
-        /** @var Model|null $model */
-        $model = static::findByHashId($value);
-
-        return $model;
-    }
-
-    /**
-     * Determine whether hash ID-aware route binding should be used for the model.
-     */
-    protected function usesHashIdRouteBinding(): bool
-    {
-        if (property_exists($this, 'usesHashIdRouteBinding')) {
-            return (bool)$this->usesHashIdRouteBinding;
-        }
-
-        return false;
     }
 
     /**

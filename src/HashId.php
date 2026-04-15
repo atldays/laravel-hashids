@@ -16,8 +16,6 @@ class HashId
     }
 
     public function __construct(
-        private bool $enable = false,
-        private bool $strict = false,
         private readonly int $minLength = 12,
     ) {}
 
@@ -30,39 +28,6 @@ class HashId
         return $this->hashIds = new Hashids($this->salt, $this->minLength);
     }
 
-    public function isDisabled(): bool
-    {
-        return ! $this->enable;
-    }
-
-    public function isStrict(): bool
-    {
-        return $this->strict;
-    }
-
-    /**
-     * @return $this
-     */
-    public function setEnable(bool $enable): self
-    {
-        $this->enable = $enable;
-
-        return $this;
-    }
-
-    /**
-     * @return $this
-     */
-    public function setStrict(bool $strict): self
-    {
-        $this->strict = $strict;
-
-        return $this;
-    }
-
-    /**
-     * @return $this
-     */
     public function setSalt(string $salt): self
     {
         $this->salt = $salt;
@@ -72,19 +37,11 @@ class HashId
 
     public function encode(?int $id): int|string|null
     {
-        if (! $this->enable) {
-            return $id;
-        }
-
         return $this->hashIds()->encodeHex($id);
     }
 
     public function decode(int|string $hash): int
     {
-        if (is_int($hash)) {
-            return $hash;
-        }
-
-        return (int) $this->hashIds()->decodeHex($hash);
+        return (int)$this->hashIds()->decodeHex($hash);
     }
 }

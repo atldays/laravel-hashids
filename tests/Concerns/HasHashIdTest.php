@@ -7,15 +7,12 @@ use Atldays\HashIds\Exceptions\ModelNotFoundByHashIdException;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUser;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUserByPublicId;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithRouteBinding;
-use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithRouteBindingMethodOverride;
 use Atldays\HashIds\Tests\TestCase;
 
 class HasHashIdTest extends TestCase
 {
     public function test_it_returns_hash_id_attribute_for_saved_model(): void
     {
-        config()->set('hashid.enable', true);
-
         $user = TestUser::query()->create(['name' => 'Alice']);
 
         $this->assertSame(TestUser::encodeHashId($user->id), $user->getHashId());
@@ -33,8 +30,6 @@ class HasHashIdTest extends TestCase
 
     public function test_it_finds_model_by_hash_id(): void
     {
-        config()->set('hashid.enable', true);
-
         $user = TestUser::query()->create(['name' => 'Alice']);
 
         $found = TestUser::findByHashId($user->hash_id);
@@ -45,24 +40,32 @@ class HasHashIdTest extends TestCase
 
     public function test_it_returns_null_when_model_by_hash_id_is_missing(): void
     {
-        config()->set('hashid.enable', true);
-
         $hashId = TestUser::encodeHashId(999);
 
         $this->assertNull(TestUser::findByHashId($hashId));
     }
 
-    public function test_it_returns_null_for_empty_hash_id_values(): void
+    public function test_it_can_find_many_models_by_hash_ids(): void
     {
-        $this->assertNull(TestUser::findByHashId(null));
-        $this->assertNull(TestUser::findByHashId(''));
+        $firstUser = TestUser::query()->create(['name' => 'Alice']);
+        $secondUser = TestUser::query()->create(['name' => 'Bob']);
+        TestUser::query()->create(['name' => 'Charlie']);
+
+        $results = TestUser::findManyByHashId([$firstUser->hash_id, $secondUser->hash_id]);
+
+        $this->assertCount(2, $results);
+        $this->assertEqualsCanonicalizing([$firstUser->id, $secondUser->id], $results->pluck('id')->all());
+    }
+
+    public function test_it_rejects_empty_hash_id_string(): void
+    {
+        $this->expectException(InvalidHashIdException::class);
+
+        TestUser::findByHashId('');
     }
 
     public function test_it_throws_for_invalid_hash_id(): void
     {
-        config()->set('hashid.enable', true);
-        config()->set('hashid.strict', true);
-
         $this->expectException(InvalidHashIdException::class);
 
         TestUser::findByHashId('invalid-hash');
@@ -70,7 +73,7 @@ class HasHashIdTest extends TestCase
 
     public function test_it_throws_model_not_found_exception_for_missing_model(): void
     {
-        config()->set('hashid.enable', true);
+        config()->set('hashid.http_enabled', true);
 
         $hashId = TestUser::encodeHashId(999);
 
@@ -80,24 +83,53 @@ class HasHashIdTest extends TestCase
         } catch (ModelNotFoundByHashIdException $exception) {
             $this->assertSame(TestUser::class, $exception->getModel());
             $this->assertSame([999], $exception->getIds());
-            $this->assertStringContainsString((string) $hashId, $exception->getMessage());
+            $this->assertStringContainsString((string)$hashId, $exception->getMessage());
         }
     }
 
-    public function test_it_allows_plain_integer_values_when_not_strict(): void
+    public function test_it_rejects_plain_integer_values_for_hash_id_lookups(): void
+    {
+        $this->expectException(InvalidHashIdException::class);
+
+        TestUser::findByHashId(1);
+    }
+
+    public function test_it_rejects_null_values_for_hash_id_lookups(): void
+    {
+        $this->expectException(\TypeError::class);
+
+        TestUser::findByHashId(null);
+    }
+
+    public function test_it_can_find_model_or_execute_callback_by_hash_id(): void
     {
         $user = TestUser::query()->create(['name' => 'Alice']);
 
-        $found = TestUser::findByHashId($user->id);
+        $found = TestUser::findOrByHashId($user->hash_id, fn () => 'fallback');
+        $missing = TestUser::findOrByHashId(TestUser::encodeHashId(999), fn () => 'fallback');
 
         $this->assertInstanceOf(TestUser::class, $found);
-        $this->assertSame($user->id, $found->id);
+        $this->assertSame('fallback', $missing);
+    }
+
+    public function test_it_can_find_model_or_return_new_instance_by_hash_id(): void
+    {
+        config()->set('hashid.http_enabled', true);
+
+        $user = TestUser::query()->create(['name' => 'Alice']);
+
+        $found = TestUser::findOrNewByHashId($user->hash_id);
+        $missing = TestUser::findOrNewByHashId(TestUser::encodeHashId(999), ['name' => 'Fallback']);
+
+        $this->assertInstanceOf(TestUser::class, $found);
+        $this->assertTrue($found->exists);
+        $this->assertInstanceOf(TestUser::class, $missing);
+        $this->assertFalse($missing->exists);
+        $this->assertSame('Fallback', $missing->name);
     }
 
     public function test_it_can_scope_query_by_hash_id(): void
     {
-        config()->set('hashid.enable', true);
-
         $firstUser = TestUser::query()->create(['name' => 'Alice']);
         TestUser::query()->create(['name' => 'Bob']);
 
@@ -109,21 +141,15 @@ class HasHashIdTest extends TestCase
         $this->assertSame($firstUser->id, $found->id);
     }
 
-    public function test_it_returns_no_results_when_scope_hash_id_value_is_empty(): void
+    public function test_it_rejects_null_when_scope_hash_id_value_is_invalid(): void
     {
-        TestUser::query()->create(['name' => 'Alice']);
+        $this->expectException(\TypeError::class);
 
-        $results = TestUser::query()
-            ->whereHashId(null)
-            ->get();
-
-        $this->assertCount(0, $results);
+        TestUser::query()->whereHashId(null);
     }
 
     public function test_it_can_scope_query_by_multiple_hash_ids(): void
     {
-        config()->set('hashid.enable', true);
-
         $firstUser = TestUser::query()->create(['name' => 'Alice']);
         $secondUser = TestUser::query()->create(['name' => 'Bob']);
         TestUser::query()->create(['name' => 'Charlie']);
@@ -137,21 +163,58 @@ class HasHashIdTest extends TestCase
         $this->assertSame([$firstUser->id, $secondUser->id], $results->pluck('id')->all());
     }
 
-    public function test_it_returns_no_results_when_scope_hash_ids_are_empty(): void
+    public function test_it_can_exclude_single_hash_id_from_query(): void
     {
-        TestUser::query()->create(['name' => 'Alice']);
+        $firstUser = TestUser::query()->create(['name' => 'Alice']);
+        $secondUser = TestUser::query()->create(['name' => 'Bob']);
 
         $results = TestUser::query()
-            ->whereHashIds([null, ''])
+            ->whereHashIdNot($firstUser->hash_id)
             ->get();
 
-        $this->assertCount(0, $results);
+        $this->assertCount(1, $results);
+        $this->assertSame($secondUser->id, $results->sole()->id);
+    }
+
+    public function test_it_rejects_null_when_excluding_hash_id_with_invalid_value(): void
+    {
+        $this->expectException(\TypeError::class);
+
+        TestUser::query()->whereHashIdNot(null);
+    }
+
+    public function test_it_rejects_invalid_values_when_scope_hash_ids_are_invalid(): void
+    {
+        $this->expectException(InvalidHashIdException::class);
+
+        TestUser::query()->whereHashIds(['']);
+    }
+
+    public function test_it_can_exclude_multiple_hash_ids_from_query(): void
+    {
+        config()->set('hashid.http_enabled', true);
+
+        $firstUser = TestUser::query()->create(['name' => 'Alice']);
+        $secondUser = TestUser::query()->create(['name' => 'Bob']);
+        $thirdUser = TestUser::query()->create(['name' => 'Charlie']);
+
+        $results = TestUser::query()
+            ->whereHashIdsNot([$firstUser->hash_id, $secondUser->hash_id])
+            ->get();
+
+        $this->assertCount(1, $results);
+        $this->assertSame($thirdUser->id, $results->sole()->id);
+    }
+
+    public function test_it_rejects_invalid_values_when_excluding_hash_ids_are_invalid(): void
+    {
+        $this->expectException(InvalidHashIdException::class);
+
+        TestUser::query()->whereHashIdsNot(['']);
     }
 
     public function test_it_can_use_custom_numeric_column_for_hash_id(): void
     {
-        config()->set('hashid.enable', true);
-
         $user = TestUserByPublicId::query()->create([
             'name' => 'Alice',
             'public_id' => 456789,
@@ -169,14 +232,27 @@ class HasHashIdTest extends TestCase
         $this->assertSame(456789, $found->public_id);
     }
 
-    public function test_it_can_resolve_route_binding_by_plain_id_when_not_strict(): void
+    public function test_it_can_find_model_by_decoded_hash_id_value(): void
     {
-        config()->set('hashid.enable', true);
-        config()->set('hashid.strict', false);
+        $user = TestUserByPublicId::query()->create([
+            'name' => 'Alice',
+            'public_id' => 456789,
+        ]);
+
+        $found = TestUserByPublicId::findByHashIdValue(456789);
+
+        $this->assertInstanceOf(TestUserByPublicId::class, $found);
+        $this->assertSame($user->id, $found->id);
+        $this->assertSame(456789, $found->public_id);
+    }
+
+    public function test_it_can_resolve_route_binding_by_plain_id_when_http_hash_ids_are_disabled(): void
+    {
+        config()->set('hashid.http_enabled', false);
 
         $user = TestUserWithRouteBinding::query()->create(['name' => 'Alice']);
 
-        $resolved = (new TestUserWithRouteBinding)->resolveRouteBinding((string) $user->id);
+        $resolved = (new TestUserWithRouteBinding)->resolveRouteBinding((string)$user->id);
 
         $this->assertInstanceOf(TestUserWithRouteBinding::class, $resolved);
         $this->assertSame($user->id, $resolved->id);
@@ -184,7 +260,7 @@ class HasHashIdTest extends TestCase
 
     public function test_it_can_resolve_route_binding_by_hash_id(): void
     {
-        config()->set('hashid.enable', true);
+        config()->set('hashid.http_enabled', true);
 
         $user = TestUserWithRouteBinding::query()->create(['name' => 'Alice']);
 
@@ -194,37 +270,41 @@ class HasHashIdTest extends TestCase
         $this->assertSame($user->id, $resolved->id);
     }
 
+    public function test_it_returns_hash_id_as_route_key_when_routing_trait_is_used(): void
+    {
+        config()->set('hashid.http_enabled', true);
+
+        $user = TestUserWithRouteBinding::query()->create(['name' => 'Alice']);
+
+        $this->assertSame($user->getHashId(), $user->getRouteKey());
+    }
+
+    public function test_it_returns_plain_id_as_route_key_when_http_hash_ids_are_disabled(): void
+    {
+        config()->set('hashid.http_enabled', false);
+
+        $user = TestUserWithRouteBinding::query()->create(['name' => 'Alice']);
+
+        $this->assertSame($user->getKey(), $user->getRouteKey());
+    }
+
     public function test_it_returns_null_for_empty_route_binding_value(): void
     {
-        config()->set('hashid.enable', true);
+        config()->set('hashid.http_enabled', true);
 
         $resolved = (new TestUserWithRouteBinding)->resolveRouteBinding('');
 
         $this->assertNull($resolved);
     }
 
-    public function test_it_uses_only_hash_id_route_binding_in_strict_mode(): void
+    public function test_it_rejects_plain_id_route_binding_when_http_hash_ids_are_enabled(): void
     {
-        config()->set('hashid.enable', true);
-        config()->set('hashid.strict', true);
+        config()->set('hashid.http_enabled', true);
 
         $user = TestUserWithRouteBinding::query()->create(['name' => 'Alice']);
 
         $this->expectException(InvalidHashIdException::class);
 
-        (new TestUserWithRouteBinding)->resolveRouteBinding((string) $user->id);
-    }
-
-    public function test_it_allows_overriding_property_based_route_binding_with_method(): void
-    {
-        config()->set('hashid.enable', true);
-        config()->set('hashid.strict', false);
-
-        $user = TestUserWithRouteBindingMethodOverride::query()->create(['name' => 'Alice']);
-
-        $resolved = (new TestUserWithRouteBindingMethodOverride)->resolveRouteBinding((string) $user->id);
-
-        $this->assertInstanceOf(TestUserWithRouteBindingMethodOverride::class, $resolved);
-        $this->assertSame($user->id, $resolved->id);
+        (new TestUserWithRouteBinding)->resolveRouteBinding((string)$user->id);
     }
 }

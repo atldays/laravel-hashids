@@ -21,7 +21,7 @@ class ModelNotFoundByHashIdException extends ModelNotFoundException
         }
 
         $exception->setModel($model, $decodedId !== null ? [$decodedId] : []);
-        $exception->message = $message.'.';
+        $exception->message = $message . '.';
 
         return $exception;
     }

@@ -2,14 +2,9 @@
 
 return [
     /*
-     * Enable or disable the Hash ID feature.
+     * Control whether the HTTP integration layer expects and emits hash IDs.
      */
-    'enable' => (bool) env('HASH_ID_ENABLE', ! env('APP_DEBUG')),
-
-    /*
-     * Enable or disable the strict mode.
-     */
-    'strict' => (bool) env('HASH_ID_STRICT', false),
+    'http_enabled' => (bool)env('HASH_ID_HTTP_ENABLED', !env('APP_DEBUG')),
 
     /*
      * The minimum length of the hash ID.

@@ -13,7 +13,8 @@ class HashIdServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('laravel-hashids')
-            ->hasConfigFile('hashid');
+            ->hasConfigFile('hashid')
+            ->hasTranslations();
     }
 
     public function registeringPackage(): void
@@ -25,8 +26,6 @@ class HashIdServiceProvider extends PackageServiceProvider
             $config = $app->make('config');
 
             return new HashId(
-                enable: $config->get('hashid.enable'),
-                strict: $config->get('hashid.strict'),
                 minLength: $config->get('hashid.min_length'),
             );
         });
