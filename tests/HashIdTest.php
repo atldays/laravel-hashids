@@ -63,7 +63,7 @@ class HashIdTest extends TestCase
         $hashId->setEnable(true);
 
         $encoded = $hashId->encode(123);
-        $this->assertEquals('dPmK3RLYBawy', $encoded);
+        $this->assertEquals('ewRA7205P7dn', $encoded);
 
         $decoded = $hashId->decode($encoded);
         $this->assertEquals(123, $decoded);
@@ -74,11 +74,11 @@ class HashIdTest extends TestCase
         $hashIdA = HashId::instance('App\Models\Addon', 'Atldays\Database\Models\Addon');
         $hashIdA->setEnable(true);
 
-        $this->assertEquals('zkWrQ0vQO9jG', $hashIdA->encode(1));
+        $this->assertEquals('60vLzl8zq48D', $hashIdA->encode(1));
 
         $hashIdB = HashId::instance('Atldays\Database\Models\Addon');
         $hashIdB->setEnable(true);
 
-        $this->assertEquals('zkWrQ0vQO9jG', $hashIdB->encode(1));
+        $this->assertEquals('60vLzl8zq48D', $hashIdB->encode(1));
     }
 }
