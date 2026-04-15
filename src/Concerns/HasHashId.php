@@ -2,6 +2,8 @@
 
 namespace Atldays\HashIds\Concerns;
 
+use Atldays\HashIds\Attributes\Support\ColumnResolver;
+use Atldays\HashIds\Attributes\Support\SaltResolver;
 use Atldays\HashIds\Exceptions\InvalidHashIdException;
 use Atldays\HashIds\HashId;
 use Atldays\HashIds\HashIdRegistry;
@@ -21,7 +23,7 @@ trait HasHashId
      */
     public static function getHashIdSalt(): string
     {
-        return static::class;
+        return SaltResolver::resolve(static::class);
     }
 
     /**
@@ -67,13 +69,7 @@ trait HasHashId
      */
     protected static function getHashIdColumn(): string
     {
-        $model = new static;
-
-        if (property_exists($model, 'hashIdColumn')) {
-            return $model->hashIdColumn;
-        }
-
-        return $model->getKeyName();
+        return ColumnResolver::resolve(static::class);
     }
 
     /**

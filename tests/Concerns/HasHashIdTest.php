@@ -6,7 +6,11 @@ use Atldays\HashIds\Exceptions\InvalidHashIdException;
 use Atldays\HashIds\Exceptions\ModelNotFoundByHashIdException;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUser;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUserByPublicId;
+use Atldays\HashIds\Tests\Fixtures\Models\TestUserByPublicIdAttribute;
+use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithModelSalt;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithRouteBinding;
+use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithTableSalt;
+use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithTraitSalt;
 use Atldays\HashIds\Tests\TestCase;
 
 class HasHashIdTest extends TestCase
@@ -244,6 +248,40 @@ class HasHashIdTest extends TestCase
         $this->assertInstanceOf(TestUserByPublicId::class, $found);
         $this->assertSame($user->id, $found->id);
         $this->assertSame(456789, $found->public_id);
+    }
+
+    public function test_it_can_use_hash_id_column_attribute_with_higher_priority_than_property(): void
+    {
+        $user = TestUserByPublicIdAttribute::query()->create([
+            'name' => 'Alice',
+            'public_id' => 456789,
+        ]);
+
+        $this->assertSame(
+            TestUserByPublicIdAttribute::encodeHashId(456789),
+            $user->getHashId(),
+        );
+
+        $found = TestUserByPublicIdAttribute::findByHashId($user->getHashId());
+
+        $this->assertInstanceOf(TestUserByPublicIdAttribute::class, $found);
+        $this->assertSame($user->id, $found->id);
+        $this->assertSame(456789, $found->public_id);
+    }
+
+    public function test_it_can_use_hash_id_salt_from_trait_attribute(): void
+    {
+        $this->assertSame('trait-salt', TestUserWithTraitSalt::getHashIdSalt());
+    }
+
+    public function test_model_hash_id_salt_attribute_overrides_trait_attribute(): void
+    {
+        $this->assertSame('model-salt', TestUserWithModelSalt::getHashIdSalt());
+    }
+
+    public function test_it_can_use_hash_id_salt_from_table_attribute(): void
+    {
+        $this->assertSame('test_users', TestUserWithTableSalt::getHashIdSalt());
     }
 
     public function test_it_can_resolve_route_binding_by_plain_id_when_http_hash_ids_are_disabled(): void
