@@ -1,7 +1,7 @@
 # Laravel Hashids
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/atldays/laravel-hashids.svg?logo=packagist&style=for-the-badge)](https://packagist.org/packages/atldays/laravel-hashids)
-[![Total Downloads](https://img.shields.io/packagist/dt/atldays/laravel-hashids.svg?style=for-the-badge&color=blue)](https://packagist.org/packages/atldays/laravel-hashids)
+[![Total Downloads](https://img.shields.io/packagist/dt/atldays/laravel-hashids.svg?style=for-the-badge&color=blue)](https://packagist.org/packages/atldays/laravel-hashids/stats)
 [![CI](https://img.shields.io/github/actions/workflow/status/atldays/laravel-hashids/ci.yml?style=for-the-badge&label=CI)](https://github.com/atldays/laravel-hashids/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE.md)
 
