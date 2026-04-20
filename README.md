@@ -1,7 +1,7 @@
 # Laravel Hashids
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/atldays/laravel-hashids.svg?logo=packagist&style=for-the-badge)](https://packagist.org/packages/atldays/laravel-hashids)
-[![Total Downloads](https://img.shields.io/packagist/dt/atldays/laravel-hashids.svg?style=for-the-badge&color=blue)](https://packagist.org/packages/atldays/laravel-hashids)
+[![Total Downloads](https://img.shields.io/packagist/dt/atldays/laravel-hashids.svg?style=for-the-badge&color=blue)](https://packagist.org/packages/atldays/laravel-hashids/stats)
 [![CI](https://img.shields.io/github/actions/workflow/status/atldays/laravel-hashids/ci.yml?style=for-the-badge&label=CI)](https://github.com/atldays/laravel-hashids/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE.md)
 
@@ -469,13 +469,13 @@ The alphabet passed to the underlying `hashids/hashids` encoder.
 
 ## Core `HashId` Service
 
-If you need the low-level service directly, you can use the `HashIds` facade:
+If you need the low-level service directly, you can use the `HashId` facade:
 
 ```php
-use Atldays\HashIds\HashIds;
+use Atldays\HashIds\Facades\HashId;
 
-$encoded = HashIds::encode(123);
-$decoded = HashIds::decode($encoded);
+$encoded = HashId::encode(123);
+$decoded = HashId::decode($encoded);
 ```
 
 If you need a custom runtime configuration, you can create a configured `HashId` instance directly:

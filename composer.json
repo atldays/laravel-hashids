@@ -36,7 +36,7 @@
                 "Atldays\\HashIds\\HashIdServiceProvider"
             ],
             "aliases": {
-                "HashIds": "Atldays\\HashIds\\HashIds",
+                "HashId": "Atldays\\HashIds\\Facades\\HashId",
                 "HashIdRegistry": "Atldays\\HashIds\\HashIdRegistry"
             }
         }

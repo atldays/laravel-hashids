@@ -1,16 +1,17 @@
 <?php
 
-namespace Atldays\HashIds;
+namespace Atldays\HashIds\Facades;
 
+use Atldays\HashIds\HashId as HashIdService;
 use Illuminate\Support\Facades\Facade;
 
-class HashIds extends Facade
+class HashId extends Facade
 {
     /**
      * Get the registered name of the component.
      */
     protected static function getFacadeAccessor(): string
     {
-        return HashId::class;
+        return HashIdService::class;
     }
 }

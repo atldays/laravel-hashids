@@ -2,6 +2,8 @@
 
 namespace Atldays\HashIds\Tests;
 
+use Atldays\HashIds\Facades\HashId as HashIdFacade;
+use Atldays\HashIds\HashIdRegistry;
 use Atldays\HashIds\HashIdServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Schema;
@@ -47,6 +49,18 @@ abstract class TestCase extends Orchestra
     {
         return [
             HashIdServiceProvider::class,
+        ];
+    }
+
+    /**
+     * @param Application $app
+     * @return array<string, class-string>
+     */
+    protected function getPackageAliases($app): array
+    {
+        return [
+            'HashId' => HashIdFacade::class,
+            'HashIdRegistry' => HashIdRegistry::class,
         ];
     }
 }
