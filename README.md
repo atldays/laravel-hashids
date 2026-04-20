@@ -469,13 +469,13 @@ The alphabet passed to the underlying `hashids/hashids` encoder.
 
 ## Core `HashId` Service
 
-If you need the low-level service directly, you can use the `HashIds` facade:
+If you need the low-level service directly, you can use the `HashId` facade:
 
 ```php
-use Atldays\HashIds\HashIds;
+use Atldays\HashIds\Facades\HashId;
 
-$encoded = HashIds::encode(123);
-$decoded = HashIds::decode($encoded);
+$encoded = HashId::encode(123);
+$decoded = HashId::decode($encoded);
 ```
 
 If you need a custom runtime configuration, you can create a configured `HashId` instance directly:
