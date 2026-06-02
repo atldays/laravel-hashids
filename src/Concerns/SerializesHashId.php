@@ -2,8 +2,6 @@
 
 namespace Atldays\HashIds\Concerns;
 
-use Illuminate\Support\Facades\Config;
-
 trait SerializesHashId
 {
     /**
@@ -15,17 +13,13 @@ trait SerializesHashId
     {
         $attributes = parent::attributesToArray();
 
-        if (!Config::get('hashid.enabled', true)) {
-            return $attributes;
-        }
-
         $column = static::getHashIdColumn();
 
         if (!array_key_exists($column, $attributes)) {
             return $attributes;
         }
 
-        $attributes[$column] = $this->getHashId();
+        $attributes[$column] = $this->getHashIdInput();
 
         return $attributes;
     }

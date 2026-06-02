@@ -35,6 +35,31 @@ class HasHashIdTest extends TestCase
         $this->assertNull($user->hash_id);
     }
 
+    public function test_it_returns_hash_id_input_when_http_hash_ids_are_enabled(): void
+    {
+        config()->set('hashid.enabled', true);
+
+        $user = TestUser::query()->create(['name' => 'Alice']);
+
+        $this->assertSame($user->getHashId(), $user->getHashIdInput());
+    }
+
+    public function test_it_returns_plain_hash_id_input_when_http_hash_ids_are_disabled(): void
+    {
+        config()->set('hashid.enabled', false);
+
+        $user = TestUser::query()->create(['name' => 'Alice']);
+
+        $this->assertSame($user->id, $user->getHashIdInput());
+    }
+
+    public function test_it_returns_null_hash_id_input_for_unsaved_model(): void
+    {
+        $user = new TestUser(['name' => 'Alice']);
+
+        $this->assertNull($user->getHashIdInput());
+    }
+
     public function test_it_finds_model_by_hash_id(): void
     {
         $user = TestUser::query()->create(['name' => 'Alice']);

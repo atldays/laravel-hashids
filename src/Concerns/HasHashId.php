@@ -8,6 +8,7 @@ use Atldays\HashIds\Exceptions\InvalidHashIdException;
 use Atldays\HashIds\HashId;
 use Atldays\HashIds\HashIdRegistry;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 
 /**
  * @mixin Model
@@ -88,6 +89,24 @@ trait HasHashId
         $key = $this->getHashIdValue();
 
         return is_int($key) ? static::encodeHashId($key) : null;
+    }
+
+    /**
+     * Get the config-aware external value for the current model instance.
+     */
+    public function getHashIdInput(): int|string|null
+    {
+        $key = $this->getHashIdValue();
+
+        if (!is_int($key)) {
+            return null;
+        }
+
+        if (!Config::get('hashid.enabled', true)) {
+            return $key;
+        }
+
+        return static::encodeHashId($key);
     }
 
     /**
