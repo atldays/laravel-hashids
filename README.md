@@ -82,6 +82,42 @@ User::findOrFailByHashId($user->hash_id);
 User::query()->whereHashId($user->hash_id)->first();
 ```
 
+### Optional Model Contract
+
+The `HasHashId` trait is enough for normal package usage. You do not need an interface just to generate hash IDs, resolve route bindings, validate request fields, or use the request helpers.
+
+If you want a full typed contract for your own services, package integrations or PHPStan-friendly dynamic model classes, also implement `HasHashIdModel`:
+
+```php
+<?php
+
+namespace App\Models;
+
+use Atldays\HashIds\Concerns\HasHashId;
+use Atldays\HashIds\Contracts\HasHashIdModel;
+use Illuminate\Database\Eloquent\Model;
+
+class User extends Model implements HasHashIdModel
+{
+    use HasHashId;
+}
+```
+
+This is useful when your own code accepts hash ID capable models through type hints:
+
+```php
+use Atldays\HashIds\Contracts\HasHashIdModel;
+use Illuminate\Database\Eloquent\Model;
+
+/**
+ * @param Model&HasHashIdModel $model
+ */
+function exposeHashId(Model $model): ?string
+{
+    return $model->getHashId();
+}
+```
+
 ## Core Concept
 
 The package is built around two layers:
@@ -133,6 +169,18 @@ User::findOrByHashId($hashId, fn () => null);
 User::findOrNewByHashId($hashId);
 ```
 
+### Find Models By External Input
+
+Use these helpers when the value comes from a request, route or another external input and should follow the `hashid.enabled` config:
+
+```php
+User::findByHashIdInput($value);
+User::findOrFailByHashIdInput($value);
+User::findManyByHashIdInput([$firstValue, $secondValue]);
+```
+
+When `hashid.enabled` is `true`, the input is decoded as a hash ID. When it is `false`, the input is resolved as a plain numeric value.
+
 ### Query Builder Helpers
 
 ```php
@@ -141,6 +189,12 @@ User::query()->whereHashIdNot($hashId)->get();
 
 User::query()->whereHashIds([$firstHashId, $secondHashId])->get();
 User::query()->whereHashIdsNot([$firstHashId, $secondHashId])->get();
+
+User::query()->whereHashIdInput($value)->first();
+User::query()->whereHashIdInputNot($value)->get();
+
+User::query()->whereHashIdInputs([$firstValue, $secondValue])->get();
+User::query()->whereHashIdInputsNot([$firstValue, $secondValue])->get();
 ```
 
 ## Route Model Binding

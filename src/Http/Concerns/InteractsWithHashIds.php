@@ -3,6 +3,7 @@
 namespace Atldays\HashIds\Http\Concerns;
 
 use Atldays\HashIds\Concerns\HasHashId;
+use Atldays\HashIds\Contracts\HasHashIdModel;
 use Atldays\HashIds\Http\Attributes\HashIdField;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,8 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config;
 use InvalidArgumentException;
 use ReflectionClass;
+use ReflectionException;
+use ReflectionProperty;
 
 trait InteractsWithHashIds
 {
@@ -19,7 +22,6 @@ trait InteractsWithHashIds
      */
     public function hashedModel(string $field): ?Model
     {
-        /** @var $model Model&HasHashId */
         $model = $this->getHashIdFieldModel($field);
         $value = $this->input($field);
 
@@ -27,11 +29,16 @@ trait InteractsWithHashIds
             return null;
         }
 
-        if (!is_int($value)) {
+        $value = $this->normalizeDecodedHashIdValue($value);
+
+        if ($value === null) {
             throw new InvalidArgumentException(sprintf('Hash ID field `%s` must be decoded to an integer before resolving a model.', $field));
         }
 
-        return $model::findByHashIdValue($value);
+        /** @var Model|null $resolvedModel */
+        $resolvedModel = $model::findByHashIdValue($value);
+
+        return $resolvedModel;
     }
 
     /**
@@ -39,7 +46,6 @@ trait InteractsWithHashIds
      */
     public function hashedModelOrFail(string $field): Model
     {
-        /** @var $model Model&HasHashId */
         $model = $this->getHashIdFieldModel($field);
         $value = $this->input($field);
 
@@ -47,11 +53,16 @@ trait InteractsWithHashIds
             throw (new ModelNotFoundException)->setModel($model);
         }
 
-        if (!is_int($value)) {
+        $value = $this->normalizeDecodedHashIdValue($value);
+
+        if ($value === null) {
             throw new InvalidArgumentException(sprintf('Hash ID field `%s` must be decoded to an integer before resolving a model.', $field));
         }
 
-        return $model::findByHashIdValueOrFail($value);
+        /** @var Model $resolvedModel */
+        $resolvedModel = $model::findByHashIdValueOrFail($value);
+
+        return $resolvedModel;
     }
 
     /**
@@ -65,7 +76,10 @@ trait InteractsWithHashIds
         $value = $this->input($field);
 
         if ($value === null || $value === '') {
-            return (new $model)->newCollection();
+            /** @var Collection<int, Model> $models */
+            $models = (new $model)->newCollection();
+
+            return $models;
         }
 
         if (!is_array($value)) {
@@ -79,14 +93,19 @@ trait InteractsWithHashIds
                 continue;
             }
 
-            if (!is_int($item)) {
+            $item = $this->normalizeDecodedHashIdValue($item);
+
+            if ($item === null) {
                 throw new InvalidArgumentException(sprintf('Hash ID field `%s` contains a non-integer decoded value.', $field));
             }
 
             $decodedValues[] = $item;
         }
 
-        return $model::findManyByHashIdValues($decodedValues);
+        /** @var Collection<int, Model> $models */
+        $models = $model::findManyByHashIdValues($decodedValues);
+
+        return $models;
     }
 
     protected function passedValidation(): void
@@ -111,21 +130,48 @@ trait InteractsWithHashIds
     }
 
     /**
-     * @return array<string, class-string<Model&HasHashId>>
+     * @return array<string, class-string<Model&HasHashIdModel>>
      */
     protected function getHashIdFields(): array
     {
-        $fields = [];
-
-        if (property_exists($this, 'hashIdFields')) {
-            /** @var array<string, class-string<Model&HasHashId>> $propertyFields */
-            $propertyFields = $this->hashIdFields;
-
-            $fields = $propertyFields;
-        }
+        $fields = $this->getHashIdFieldsFromProperty();
 
         foreach ($this->getHashIdFieldAttributes() as $attribute) {
-            $fields[$attribute->field] = $attribute->model;
+            $fields[$attribute->field] = $this->validatedHashIdModel($attribute->model);
+        }
+
+        return $fields;
+    }
+
+    /**
+     * @return array<string, class-string<Model&HasHashIdModel>>
+     */
+    protected function getHashIdFieldsFromProperty(): array
+    {
+        try {
+            $property = new ReflectionProperty($this, 'hashIdFields');
+        } catch (ReflectionException) {
+            return [];
+        }
+
+        if (!$property->isInitialized($this)) {
+            return [];
+        }
+
+        $value = $property->getValue($this);
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $fields = [];
+
+        foreach ($value as $field => $model) {
+            if (!is_string($field) || !is_string($model)) {
+                throw new InvalidArgumentException(sprintf('Hash ID fields on `%s` must map field names to Eloquent model classes.', static::class));
+            }
+
+            $fields[$field] = $this->validatedHashIdModel($model);
         }
 
         return $fields;
@@ -159,7 +205,7 @@ trait InteractsWithHashIds
     }
 
     /**
-     * @return class-string<Model&HasHashId>
+     * @return class-string<Model&HasHashIdModel>
      */
     protected function getHashIdFieldModel(string $field): string
     {
@@ -185,7 +231,28 @@ trait InteractsWithHashIds
     /**
      * Decode a configured hash ID field value to its plain model value.
      *
-     * @param class-string<Model&HasHashId> $model
+     * @param class-string $model
+     * @return class-string<Model&HasHashIdModel>
+     */
+    protected function validatedHashIdModel(string $model): string
+    {
+        if (!is_subclass_of($model, Model::class)) {
+            throw new InvalidArgumentException(sprintf('Hash ID field model `%s` must be an Eloquent model class.', $model));
+        }
+
+        if (
+            !is_subclass_of($model, HasHashIdModel::class)
+            && !in_array(HasHashId::class, class_uses_recursive($model), true)
+        ) {
+            throw new InvalidArgumentException(sprintf('Model `%s` must use the `%s` trait or implement the `%s` contract to be used as a hash ID field model.', $model, HasHashId::class, HasHashIdModel::class));
+        }
+
+        /** @var class-string<Model&HasHashIdModel> $model */
+        return $model;
+    }
+
+    /**
+     * @param class-string<Model&HasHashIdModel> $model
      */
     protected function decodeHashIdFieldValue(mixed $value, string $model): mixed
     {
@@ -201,6 +268,19 @@ trait InteractsWithHashIds
         }
 
         return $model::decodeHashId($value);
+    }
+
+    protected function normalizeDecodedHashIdValue(mixed $value): ?int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (!Config::get('hashid.enabled', true) && is_string($value) && ctype_digit($value)) {
+            return (int)$value;
+        }
+
+        return null;
     }
 
     /**

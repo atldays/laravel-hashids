@@ -70,6 +70,14 @@ To auto-fix formatting issues:
 ./bin/docker-php "composer test"
 ```
 
+### Static Analysis
+
+```bash
+./bin/docker-php "composer analyse"
+```
+
+Local static analysis runs against the dependencies currently installed in your workspace. The GitHub Actions `PHPStan` job pins the highest supported framework profile so the package is also checked against the newest Laravel/PHP combination.
+
 ## Local Development
 
 If you already have a compatible local PHP environment, you can also run tools locally instead of Docker.
@@ -79,6 +87,7 @@ Examples:
 ```bash
 vendor/bin/pint --test
 vendor/bin/pint
+composer analyse
 composer test
 ```
 
@@ -110,6 +119,7 @@ A good pull request usually includes:
 Before opening or updating a pull request, make sure:
 
 - tests pass
+- static analysis passes
 - formatting passes
 - commit messages follow Conventional Commits
 - public API changes are documented

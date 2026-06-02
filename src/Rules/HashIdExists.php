@@ -35,7 +35,7 @@ class HashIdExists extends AbstractRule
         }
 
         try {
-            return $this->model::findByHashId($value) instanceof $this->model;
+            return $this->model::findByHashIdInput($value) instanceof $this->model;
         } catch (InvalidHashIdException) {
             return false;
         }

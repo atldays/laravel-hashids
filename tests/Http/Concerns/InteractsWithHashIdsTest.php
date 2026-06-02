@@ -7,6 +7,7 @@ use Atldays\HashIds\Tests\Fixtures\Models\TestUserByPublicId;
 use Atldays\HashIds\Tests\Fixtures\Requests\InheritedHashIdFormRequest;
 use Atldays\HashIds\Tests\Fixtures\Requests\TestHashIdByPublicIdFormRequest;
 use Atldays\HashIds\Tests\Fixtures\Requests\TestHashIdFormRequest;
+use Atldays\HashIds\Tests\Fixtures\Requests\TestInvalidHashIdFieldFormRequest;
 use Atldays\HashIds\Tests\TestCase;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -41,6 +42,16 @@ class InteractsWithHashIdsTest extends TestCase
             'items.*.users' => TestUser::class,
             'inherited.users' => TestUser::class,
         ], $request->resolvedHashIdFields());
+    }
+
+    public function test_it_rejects_hash_id_fields_that_do_not_map_to_models(): void
+    {
+        $request = $this->makeInvalidHashIdFieldRequest();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('must be an Eloquent model class');
+
+        $request->resolvedHashIdFields();
     }
 
     public function test_it_decodes_single_and_array_hash_id_fields_after_validation(): void
@@ -115,6 +126,28 @@ class InteractsWithHashIdsTest extends TestCase
 
         $request = $this->makePublicIdRequest([
             'author' => 456789,
+        ]);
+
+        $request->normalizeHashIds();
+
+        $model = $request->resolveHashedModel('author');
+
+        $this->assertInstanceOf(TestUserByPublicId::class, $model);
+        $this->assertSame($author->id, $model->id);
+        $this->assertSame(456789, $model->public_id);
+    }
+
+    public function test_it_can_resolve_single_model_from_plain_numeric_string_when_http_hash_ids_are_disabled(): void
+    {
+        config()->set('hashid.enabled', false);
+
+        $author = TestUserByPublicId::query()->create([
+            'name' => 'Alice',
+            'public_id' => 456789,
+        ]);
+
+        $request = $this->makePublicIdRequest([
+            'author' => '456789',
         ]);
 
         $request->normalizeHashIds();
@@ -204,6 +237,32 @@ class InteractsWithHashIdsTest extends TestCase
 
         $request = $this->makePublicIdRequest([
             'users' => [456789, 567890],
+        ]);
+
+        $request->normalizeHashIds();
+
+        $models = $request->resolveHashedModels('users');
+
+        $this->assertCount(2, $models);
+        $this->assertSame([$firstUser->id, $secondUser->id], $models->pluck('id')->all());
+        $this->assertSame([456789, 567890], $models->pluck('public_id')->all());
+    }
+
+    public function test_it_can_resolve_model_collection_from_plain_numeric_strings_when_http_hash_ids_are_disabled(): void
+    {
+        config()->set('hashid.enabled', false);
+
+        $firstUser = TestUserByPublicId::query()->create([
+            'name' => 'Alice',
+            'public_id' => 456789,
+        ]);
+        $secondUser = TestUserByPublicId::query()->create([
+            'name' => 'Bob',
+            'public_id' => 567890,
+        ]);
+
+        $request = $this->makePublicIdRequest([
+            'users' => ['456789', '567890'],
         ]);
 
         $request->normalizeHashIds();
@@ -464,6 +523,16 @@ class InteractsWithHashIdsTest extends TestCase
 
         /** @var TestHashIdByPublicIdFormRequest $request */
         $request = TestHashIdByPublicIdFormRequest::createFromBase($baseRequest);
+
+        return $request;
+    }
+
+    private function makeInvalidHashIdFieldRequest(array $input = []): TestInvalidHashIdFieldFormRequest
+    {
+        $baseRequest = Request::create('/', 'GET', $input);
+
+        /** @var TestInvalidHashIdFieldFormRequest $request */
+        $request = TestInvalidHashIdFieldFormRequest::createFromBase($baseRequest);
 
         return $request;
     }
