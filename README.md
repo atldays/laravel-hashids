@@ -133,6 +133,18 @@ User::findOrByHashId($hashId, fn () => null);
 User::findOrNewByHashId($hashId);
 ```
 
+### Find Models By External Input
+
+Use these helpers when the value comes from a request, route or another external input and should follow the `hashid.enabled` config:
+
+```php
+User::findByHashIdInput($value);
+User::findOrFailByHashIdInput($value);
+User::findManyByHashIdInput([$firstValue, $secondValue]);
+```
+
+When `hashid.enabled` is `true`, the input is decoded as a hash ID. When it is `false`, the input is resolved as a plain numeric value.
+
 ### Query Builder Helpers
 
 ```php
@@ -141,6 +153,12 @@ User::query()->whereHashIdNot($hashId)->get();
 
 User::query()->whereHashIds([$firstHashId, $secondHashId])->get();
 User::query()->whereHashIdsNot([$firstHashId, $secondHashId])->get();
+
+User::query()->whereHashIdInput($value)->first();
+User::query()->whereHashIdInputNot($value)->get();
+
+User::query()->whereHashIdInputs([$firstValue, $secondValue])->get();
+User::query()->whereHashIdInputsNot([$firstValue, $secondValue])->get();
 ```
 
 ## Route Model Binding

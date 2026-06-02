@@ -45,6 +45,44 @@ class HasHashIdTest extends TestCase
         $this->assertSame($user->id, $found->id);
     }
 
+    public function test_it_finds_model_by_hash_id_input_when_http_hash_ids_are_enabled(): void
+    {
+        config()->set('hashid.enabled', true);
+
+        $user = TestUser::query()->create(['name' => 'Alice']);
+
+        $found = TestUser::findByHashIdInput($user->hash_id);
+
+        $this->assertInstanceOf(TestUser::class, $found);
+        $this->assertSame($user->id, $found->id);
+    }
+
+    public function test_it_finds_model_by_plain_hash_id_input_when_http_hash_ids_are_disabled(): void
+    {
+        config()->set('hashid.enabled', false);
+
+        $user = TestUser::query()->create(['name' => 'Alice']);
+
+        $foundByInteger = TestUser::findByHashIdInput($user->id);
+        $foundByNumericString = TestUser::findByHashIdInput((string)$user->id);
+
+        $this->assertInstanceOf(TestUser::class, $foundByInteger);
+        $this->assertInstanceOf(TestUser::class, $foundByNumericString);
+        $this->assertSame($user->id, $foundByInteger->id);
+        $this->assertSame($user->id, $foundByNumericString->id);
+    }
+
+    public function test_it_rejects_plain_hash_id_input_when_http_hash_ids_are_enabled(): void
+    {
+        config()->set('hashid.enabled', true);
+
+        $user = TestUser::query()->create(['name' => 'Alice']);
+
+        $this->expectException(InvalidHashIdException::class);
+
+        TestUser::findByHashIdInput($user->id);
+    }
+
     public function test_it_returns_null_when_model_by_hash_id_is_missing(): void
     {
         $hashId = TestUser::encodeHashId(999);
@@ -59,6 +97,20 @@ class HasHashIdTest extends TestCase
         TestUser::query()->create(['name' => 'Charlie']);
 
         $results = TestUser::findManyByHashId([$firstUser->hash_id, $secondUser->hash_id]);
+
+        $this->assertCount(2, $results);
+        $this->assertEqualsCanonicalizing([$firstUser->id, $secondUser->id], $results->pluck('id')->all());
+    }
+
+    public function test_it_can_find_many_models_by_hash_id_input(): void
+    {
+        config()->set('hashid.enabled', false);
+
+        $firstUser = TestUser::query()->create(['name' => 'Alice']);
+        $secondUser = TestUser::query()->create(['name' => 'Bob']);
+        TestUser::query()->create(['name' => 'Charlie']);
+
+        $results = TestUser::findManyByHashIdInput([(string)$firstUser->id, $secondUser->id]);
 
         $this->assertCount(2, $results);
         $this->assertEqualsCanonicalizing([$firstUser->id, $secondUser->id], $results->pluck('id')->all());
@@ -148,6 +200,21 @@ class HasHashIdTest extends TestCase
         $this->assertSame($firstUser->id, $found->id);
     }
 
+    public function test_it_can_scope_query_by_hash_id_input(): void
+    {
+        config()->set('hashid.enabled', false);
+
+        $firstUser = TestUser::query()->create(['name' => 'Alice']);
+        TestUser::query()->create(['name' => 'Bob']);
+
+        $found = TestUser::query()
+            ->whereHashIdInput((string)$firstUser->id)
+            ->first();
+
+        $this->assertInstanceOf(TestUser::class, $found);
+        $this->assertSame($firstUser->id, $found->id);
+    }
+
     public function test_it_rejects_null_when_scope_hash_id_value_is_invalid(): void
     {
         $this->expectException(\TypeError::class);
@@ -170,6 +237,23 @@ class HasHashIdTest extends TestCase
         $this->assertSame([$firstUser->id, $secondUser->id], $results->pluck('id')->all());
     }
 
+    public function test_it_can_scope_query_by_multiple_hash_id_inputs(): void
+    {
+        config()->set('hashid.enabled', false);
+
+        $firstUser = TestUser::query()->create(['name' => 'Alice']);
+        $secondUser = TestUser::query()->create(['name' => 'Bob']);
+        TestUser::query()->create(['name' => 'Charlie']);
+
+        $results = TestUser::query()
+            ->whereHashIdInputs([(string)$firstUser->id, $secondUser->id])
+            ->orderBy('id')
+            ->get();
+
+        $this->assertCount(2, $results);
+        $this->assertSame([$firstUser->id, $secondUser->id], $results->pluck('id')->all());
+    }
+
     public function test_it_can_exclude_single_hash_id_from_query(): void
     {
         $firstUser = TestUser::query()->create(['name' => 'Alice']);
@@ -177,6 +261,21 @@ class HasHashIdTest extends TestCase
 
         $results = TestUser::query()
             ->whereHashIdNot($firstUser->hash_id)
+            ->get();
+
+        $this->assertCount(1, $results);
+        $this->assertSame($secondUser->id, $results->sole()->id);
+    }
+
+    public function test_it_can_exclude_single_hash_id_input_from_query(): void
+    {
+        config()->set('hashid.enabled', false);
+
+        $firstUser = TestUser::query()->create(['name' => 'Alice']);
+        $secondUser = TestUser::query()->create(['name' => 'Bob']);
+
+        $results = TestUser::query()
+            ->whereHashIdInputNot((string)$firstUser->id)
             ->get();
 
         $this->assertCount(1, $results);
@@ -207,6 +306,22 @@ class HasHashIdTest extends TestCase
 
         $results = TestUser::query()
             ->whereHashIdsNot([$firstUser->hash_id, $secondUser->hash_id])
+            ->get();
+
+        $this->assertCount(1, $results);
+        $this->assertSame($thirdUser->id, $results->sole()->id);
+    }
+
+    public function test_it_can_exclude_multiple_hash_id_inputs_from_query(): void
+    {
+        config()->set('hashid.enabled', false);
+
+        $firstUser = TestUser::query()->create(['name' => 'Alice']);
+        $secondUser = TestUser::query()->create(['name' => 'Bob']);
+        $thirdUser = TestUser::query()->create(['name' => 'Charlie']);
+
+        $results = TestUser::query()
+            ->whereHashIdInputsNot([(string)$firstUser->id, $secondUser->id])
             ->get();
 
         $this->assertCount(1, $results);

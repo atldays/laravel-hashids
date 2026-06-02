@@ -27,7 +27,9 @@ trait InteractsWithHashIds
             return null;
         }
 
-        if (!is_int($value)) {
+        $value = $this->normalizeDecodedHashIdValue($value);
+
+        if ($value === null) {
             throw new InvalidArgumentException(sprintf('Hash ID field `%s` must be decoded to an integer before resolving a model.', $field));
         }
 
@@ -47,7 +49,9 @@ trait InteractsWithHashIds
             throw (new ModelNotFoundException)->setModel($model);
         }
 
-        if (!is_int($value)) {
+        $value = $this->normalizeDecodedHashIdValue($value);
+
+        if ($value === null) {
             throw new InvalidArgumentException(sprintf('Hash ID field `%s` must be decoded to an integer before resolving a model.', $field));
         }
 
@@ -79,7 +83,9 @@ trait InteractsWithHashIds
                 continue;
             }
 
-            if (!is_int($item)) {
+            $item = $this->normalizeDecodedHashIdValue($item);
+
+            if ($item === null) {
                 throw new InvalidArgumentException(sprintf('Hash ID field `%s` contains a non-integer decoded value.', $field));
             }
 
@@ -201,6 +207,19 @@ trait InteractsWithHashIds
         }
 
         return $model::decodeHashId($value);
+    }
+
+    protected function normalizeDecodedHashIdValue(mixed $value): ?int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (!Config::get('hashid.enabled', true) && is_string($value) && ctype_digit($value)) {
+            return (int)$value;
+        }
+
+        return null;
     }
 
     /**

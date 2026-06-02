@@ -7,6 +7,7 @@ use Atldays\HashIds\Exceptions\ModelNotFoundByHashIdException;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Config;
 
 trait HasHashIdQueries
 {
@@ -15,6 +16,30 @@ trait HasHashIdQueries
         if ($value === '') {
             throw InvalidHashIdException::forModel(static::class, $value);
         }
+    }
+
+    /**
+     * Decode a config-aware external hash ID input into its source value.
+     */
+    protected static function decodeHashIdInput(int|string|null $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (Config::get('hashid.enabled', true)) {
+            return static::decodeHashId($value);
+        }
+
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (ctype_digit($value)) {
+            return (int)$value;
+        }
+
+        throw InvalidHashIdException::forModel(static::class, $value);
     }
 
     /**
@@ -67,6 +92,58 @@ trait HasHashIdQueries
                 ),
             ),
         );
+    }
+
+    /**
+     * Find a model by a config-aware external hash ID input.
+     *
+     * @throws InvalidHashIdException
+     */
+    public static function findByHashIdInput(int|string|null $value): ?static
+    {
+        $id = static::decodeHashIdInput($value);
+
+        if ($id === null) {
+            return null;
+        }
+
+        return static::findByHashIdValue($id);
+    }
+
+    /**
+     * Find multiple models by config-aware external hash ID inputs.
+     *
+     * @param array<int, int|string|null> $values
+     * @return Collection<int, static>
+     *
+     * @throws InvalidHashIdException
+     */
+    public static function findManyByHashIdInput(array $values): Collection
+    {
+        return static::query()
+            ->whereHashIdInputs($values)
+            ->get();
+    }
+
+    /**
+     * Find a model by a config-aware external hash ID input or fail with a dedicated exception.
+     *
+     * @throws InvalidHashIdException
+     * @throws ModelNotFoundByHashIdException
+     */
+    public static function findOrFailByHashIdInput(int|string|null $value): static
+    {
+        $id = static::decodeHashIdInput($value);
+
+        if ($id !== null) {
+            $model = static::findByHashIdValue($id);
+
+            if ($model instanceof static) {
+                return $model;
+            }
+        }
+
+        throw ModelNotFoundByHashIdException::forModel(static::class, $value, $id);
     }
 
     /**
@@ -186,6 +263,38 @@ trait HasHashIdQueries
     }
 
     /**
+     * Scope a query by a config-aware external hash ID input.
+     *
+     * @throws InvalidHashIdException
+     */
+    public function scopeWhereHashIdInput(Builder $query, int|string|null $value): Builder
+    {
+        $id = static::decodeHashIdInput($value);
+
+        if ($id === null) {
+            return $query->whereIn(static::getQualifiedHashIdColumn(), []);
+        }
+
+        return $query->where(static::getQualifiedHashIdColumn(), $id);
+    }
+
+    /**
+     * Scope a query by excluding a config-aware external hash ID input.
+     *
+     * @throws InvalidHashIdException
+     */
+    public function scopeWhereHashIdInputNot(Builder $query, int|string|null $value): Builder
+    {
+        $id = static::decodeHashIdInput($value);
+
+        if ($id === null) {
+            return $query;
+        }
+
+        return $query->where(static::getQualifiedHashIdColumn(), '!=', $id);
+    }
+
+    /**
      * Scope a query by multiple hash IDs.
      *
      * @param array<int, string> $values
@@ -205,6 +314,50 @@ trait HasHashIdQueries
         }
 
         return $query->whereIn(static::getQualifiedHashIdColumn(), array_values(array_unique($ids)));
+    }
+
+    /**
+     * Scope a query by multiple config-aware external hash ID inputs.
+     *
+     * @param array<int, int|string|null> $values
+     *
+     * @throws InvalidHashIdException
+     */
+    public function scopeWhereHashIdInputs(Builder $query, array $values): Builder
+    {
+        $ids = [];
+
+        foreach ($values as $value) {
+            $id = static::decodeHashIdInput($value);
+
+            if ($id !== null) {
+                $ids[] = $id;
+            }
+        }
+
+        return $query->whereIn(static::getQualifiedHashIdColumn(), array_values(array_unique($ids)));
+    }
+
+    /**
+     * Scope a query by excluding multiple config-aware external hash ID inputs.
+     *
+     * @param array<int, int|string|null> $values
+     *
+     * @throws InvalidHashIdException
+     */
+    public function scopeWhereHashIdInputsNot(Builder $query, array $values): Builder
+    {
+        $ids = [];
+
+        foreach ($values as $value) {
+            $id = static::decodeHashIdInput($value);
+
+            if ($id !== null) {
+                $ids[] = $id;
+            }
+        }
+
+        return $query->whereNotIn(static::getQualifiedHashIdColumn(), array_values(array_unique($ids)));
     }
 
     /**

@@ -126,6 +126,28 @@ class InteractsWithHashIdsTest extends TestCase
         $this->assertSame(456789, $model->public_id);
     }
 
+    public function test_it_can_resolve_single_model_from_plain_numeric_string_when_http_hash_ids_are_disabled(): void
+    {
+        config()->set('hashid.enabled', false);
+
+        $author = TestUserByPublicId::query()->create([
+            'name' => 'Alice',
+            'public_id' => 456789,
+        ]);
+
+        $request = $this->makePublicIdRequest([
+            'author' => '456789',
+        ]);
+
+        $request->normalizeHashIds();
+
+        $model = $request->resolveHashedModel('author');
+
+        $this->assertInstanceOf(TestUserByPublicId::class, $model);
+        $this->assertSame($author->id, $model->id);
+        $this->assertSame(456789, $model->public_id);
+    }
+
     public function test_it_can_resolve_single_model_or_fail_from_decoded_hash_id_field(): void
     {
         config()->set('hashid.enabled', true);
@@ -204,6 +226,32 @@ class InteractsWithHashIdsTest extends TestCase
 
         $request = $this->makePublicIdRequest([
             'users' => [456789, 567890],
+        ]);
+
+        $request->normalizeHashIds();
+
+        $models = $request->resolveHashedModels('users');
+
+        $this->assertCount(2, $models);
+        $this->assertSame([$firstUser->id, $secondUser->id], $models->pluck('id')->all());
+        $this->assertSame([456789, 567890], $models->pluck('public_id')->all());
+    }
+
+    public function test_it_can_resolve_model_collection_from_plain_numeric_strings_when_http_hash_ids_are_disabled(): void
+    {
+        config()->set('hashid.enabled', false);
+
+        $firstUser = TestUserByPublicId::query()->create([
+            'name' => 'Alice',
+            'public_id' => 456789,
+        ]);
+        $secondUser = TestUserByPublicId::query()->create([
+            'name' => 'Bob',
+            'public_id' => 567890,
+        ]);
+
+        $request = $this->makePublicIdRequest([
+            'users' => ['456789', '567890'],
         ]);
 
         $request->normalizeHashIds();
