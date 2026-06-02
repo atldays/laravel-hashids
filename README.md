@@ -74,6 +74,7 @@ Now you can:
 $user = User::findOrFail(123);
 
 $user->getHashId();
+$user->getHashIdInput();
 $user->hash_id;
 
 User::findByHashId($user->hash_id);
@@ -145,6 +146,16 @@ When it is disabled:
 
 That makes local debugging and gradual adoption much easier.
 
+For a full request-response cycle, use `getHashIdInput()` when sending model identifiers to the client and `findByHashIdInput()` when accepting them back:
+
+```php
+$value = $user->getHashIdInput();
+
+$user = User::findByHashIdInput($value);
+```
+
+When `hashid.enabled` is `true`, `getHashIdInput()` returns a hash ID string. When it is `false`, it returns the plain numeric source value.
+
 ## Basic Model Usage
 
 ### Generate Hash IDs
@@ -154,10 +165,13 @@ $user = User::findOrFail(123);
 
 $user->hash_id;
 $user->getHashId();
+$user->getHashIdInput();
 
 User::encodeHashId(123);
 User::decodeHashId($user->hash_id);
 ```
+
+`getHashId()` always returns the hashed representation when the model has a source value. `getHashIdInput()` follows `hashid.enabled` and is the safer choice for identifiers you send to a client and expect back in a request.
 
 ### Find Models By Hash ID
 
@@ -180,6 +194,14 @@ User::findManyByHashIdInput([$firstValue, $secondValue]);
 ```
 
 When `hashid.enabled` is `true`, the input is decoded as a hash ID. When it is `false`, the input is resolved as a plain numeric value.
+
+For symmetry, send values out with `getHashIdInput()`:
+
+```php
+return [
+    'id' => $user->getHashIdInput(),
+];
+```
 
 ### Query Builder Helpers
 
