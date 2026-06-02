@@ -35,7 +35,10 @@ trait InteractsWithHashIds
             throw new InvalidArgumentException(sprintf('Hash ID field `%s` must be decoded to an integer before resolving a model.', $field));
         }
 
-        return $model::findByHashIdValue($value);
+        /** @var Model|null $resolvedModel */
+        $resolvedModel = $model::findByHashIdValue($value);
+
+        return $resolvedModel;
     }
 
     /**
@@ -56,7 +59,10 @@ trait InteractsWithHashIds
             throw new InvalidArgumentException(sprintf('Hash ID field `%s` must be decoded to an integer before resolving a model.', $field));
         }
 
-        return $model::findByHashIdValueOrFail($value);
+        /** @var Model $resolvedModel */
+        $resolvedModel = $model::findByHashIdValueOrFail($value);
+
+        return $resolvedModel;
     }
 
     /**

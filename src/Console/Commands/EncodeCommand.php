@@ -3,6 +3,7 @@
 namespace Atldays\HashIds\Console\Commands;
 
 use Atldays\HashIds\Concerns\HasHashId;
+use Atldays\HashIds\Contracts\HasHashIdModel;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
 
@@ -31,6 +32,7 @@ class EncodeCommand extends Command
             return self::FAILURE;
         }
 
+        /** @var class-string<Model&HasHashIdModel> $model */
         $this->line((string)$model::encodeHashId((int)$value));
 
         return self::SUCCESS;

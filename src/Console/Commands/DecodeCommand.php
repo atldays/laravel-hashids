@@ -3,6 +3,7 @@
 namespace Atldays\HashIds\Console\Commands;
 
 use Atldays\HashIds\Concerns\HasHashId;
+use Atldays\HashIds\Contracts\HasHashIdModel;
 use Atldays\HashIds\Exceptions\InvalidHashIdException;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
@@ -33,6 +34,7 @@ class DecodeCommand extends Command
         }
 
         try {
+            /** @var class-string<Model&HasHashIdModel> $model */
             $decoded = $model::decodeHashId($value);
 
             $this->line((string)$decoded);
