@@ -8,6 +8,23 @@ on:
   pull_request:
 
 jobs:
+  validate:
+    name: Composer Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          coverage: none
+
+      - name: Validate Composer metadata
+        run: composer validate --no-check-lock --strict
+
   pint:
     name: Pint
     runs-on: ubuntu-latest
@@ -37,6 +54,43 @@ jobs:
 
       - name: Check formatting
         run: composer format:test
+
+  analyse:
+    name: PHPStan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.composer/cache/files
+            ~/.cache/composer/files
+          key: ${{ runner.os }}-php-8.5-analyse-composer-${{ hashFiles('composer.json') }}
+          restore-keys: |
+            ${{ runner.os }}-php-8.5-analyse-composer-
+
+      - name: Pin framework analysis dependencies
+        run: |
+          composer require --dev --no-update \
+            "laravel/framework:^13.0" \
+            "orchestra/testbench:^11.0" \
+            "phpunit/phpunit:^12.5"
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --with-all-dependencies
+
+      - name: Run static analysis
+        run: composer analyse
 
   tests:
     name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}
