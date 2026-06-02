@@ -77,7 +77,7 @@ trait HasHashId
      */
     protected static function getQualifiedHashIdColumn(): string
     {
-        return (new static)->qualifyColumn(static::getHashIdColumn());
+        return static::query()->getModel()->qualifyColumn(static::getHashIdColumn());
     }
 
     /**

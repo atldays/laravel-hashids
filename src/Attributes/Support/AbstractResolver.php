@@ -4,6 +4,9 @@ namespace Atldays\HashIds\Attributes\Support;
 
 use ReflectionClass;
 
+/**
+ * @phpstan-consistent-constructor
+ */
 abstract class AbstractResolver
 {
     /**

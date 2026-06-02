@@ -82,6 +82,42 @@ User::findOrFailByHashId($user->hash_id);
 User::query()->whereHashId($user->hash_id)->first();
 ```
 
+### Optional Model Contract
+
+The `HasHashId` trait is enough for normal package usage. You do not need an interface just to generate hash IDs, resolve route bindings, validate request fields, or use the request helpers.
+
+If you want a full typed contract for your own services, package integrations or PHPStan-friendly dynamic model classes, also implement `HasHashIdModel`:
+
+```php
+<?php
+
+namespace App\Models;
+
+use Atldays\HashIds\Concerns\HasHashId;
+use Atldays\HashIds\Contracts\HasHashIdModel;
+use Illuminate\Database\Eloquent\Model;
+
+class User extends Model implements HasHashIdModel
+{
+    use HasHashId;
+}
+```
+
+This is useful when your own code accepts hash ID capable models through type hints:
+
+```php
+use Atldays\HashIds\Contracts\HasHashIdModel;
+use Illuminate\Database\Eloquent\Model;
+
+/**
+ * @param Model&HasHashIdModel $model
+ */
+function exposeHashId(Model $model): ?string
+{
+    return $model->getHashId();
+}
+```
+
 ## Core Concept
 
 The package is built around two layers:

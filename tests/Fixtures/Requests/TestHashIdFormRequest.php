@@ -6,6 +6,7 @@ use Atldays\HashIds\Http\Attributes\HashIdField;
 use Atldays\HashIds\Http\Concerns\InteractsWithHashIds;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUser;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Http\FormRequest;
 
 #[HashIdField('users', TestUser::class)]
@@ -30,7 +31,7 @@ class TestHashIdFormRequest extends FormRequest
     }
 
     /**
-     * @return array<string, class-string<TestUser>>
+     * @return array<string, class-string<Model>>
      */
     public function resolvedHashIdFields(): array
     {

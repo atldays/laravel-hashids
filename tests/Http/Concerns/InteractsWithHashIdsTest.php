@@ -7,6 +7,7 @@ use Atldays\HashIds\Tests\Fixtures\Models\TestUserByPublicId;
 use Atldays\HashIds\Tests\Fixtures\Requests\InheritedHashIdFormRequest;
 use Atldays\HashIds\Tests\Fixtures\Requests\TestHashIdByPublicIdFormRequest;
 use Atldays\HashIds\Tests\Fixtures\Requests\TestHashIdFormRequest;
+use Atldays\HashIds\Tests\Fixtures\Requests\TestInvalidHashIdFieldFormRequest;
 use Atldays\HashIds\Tests\TestCase;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -41,6 +42,16 @@ class InteractsWithHashIdsTest extends TestCase
             'items.*.users' => TestUser::class,
             'inherited.users' => TestUser::class,
         ], $request->resolvedHashIdFields());
+    }
+
+    public function test_it_rejects_hash_id_fields_that_do_not_map_to_models(): void
+    {
+        $request = $this->makeInvalidHashIdFieldRequest();
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('must be an Eloquent model class');
+
+        $request->resolvedHashIdFields();
     }
 
     public function test_it_decodes_single_and_array_hash_id_fields_after_validation(): void
@@ -512,6 +523,16 @@ class InteractsWithHashIdsTest extends TestCase
 
         /** @var TestHashIdByPublicIdFormRequest $request */
         $request = TestHashIdByPublicIdFormRequest::createFromBase($baseRequest);
+
+        return $request;
+    }
+
+    private function makeInvalidHashIdFieldRequest(array $input = []): TestInvalidHashIdFieldFormRequest
+    {
+        $baseRequest = Request::create('/', 'GET', $input);
+
+        /** @var TestInvalidHashIdFieldFormRequest $request */
+        $request = TestInvalidHashIdFieldFormRequest::createFromBase($baseRequest);
 
         return $request;
     }

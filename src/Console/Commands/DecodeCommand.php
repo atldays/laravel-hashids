@@ -17,7 +17,6 @@ class DecodeCommand extends Command
 
     public function handle(): int
     {
-        /** @var $model Model&HasHashId */
         $model = $this->argument('model');
         $value = $this->argument('value');
 

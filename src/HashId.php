@@ -39,7 +39,7 @@ class HashId
 
     public function encode(int $id): string
     {
-        return $this->hashIds()->encodeHex($id);
+        return $this->hashIds()->encodeHex((string)$id);
     }
 
     /**
@@ -49,7 +49,7 @@ class HashId
     {
         $decoded = $this->hashIds()->decodeHex($hash);
 
-        if (!is_string($decoded) || $decoded === '' || !ctype_digit($decoded)) {
+        if ($decoded === '' || !ctype_digit($decoded)) {
             throw InvalidHashIdException::forHashId($hash);
         }
 

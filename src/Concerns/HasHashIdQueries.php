@@ -73,7 +73,7 @@ trait HasHashIdQueries
         $ids = array_values(array_unique($values));
 
         if ($ids === []) {
-            return (new static)->newCollection();
+            return static::query()->getModel()->newCollection();
         }
 
         /** @var Collection<int, static> $models */
@@ -82,7 +82,7 @@ trait HasHashIdQueries
             ->get()
             ->keyBy(static fn (self $instance): mixed => $instance->getAttribute(static::getHashIdColumn()));
 
-        return (new static)->newCollection(
+        return static::query()->getModel()->newCollection(
             array_values(
                 array_filter(
                     array_map(
@@ -231,7 +231,7 @@ trait HasHashIdQueries
             return $model;
         }
 
-        return new static($attributes);
+        return static::query()->newModelInstance($attributes);
     }
 
     /**

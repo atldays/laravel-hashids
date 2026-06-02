@@ -3,6 +3,7 @@
 namespace Atldays\HashIds\Rules;
 
 use Atldays\HashIds\Concerns\HasHashId;
+use Atldays\HashIds\Contracts\HasHashIdModel;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,11 @@ use InvalidArgumentException;
 
 abstract class AbstractRule implements ValidationRule
 {
+    /**
+     * @var class-string<Model&HasHashIdModel>
+     */
+    protected readonly string $model;
+
     /**
      * Get the translation key for a single invalid value.
      */
@@ -30,15 +36,11 @@ abstract class AbstractRule implements ValidationRule
      * @param class-string<Model> $model
      */
     public function __construct(
-        protected readonly string $model,
+        string $model,
     ) {
-        if (!is_subclass_of($this->model, Model::class)) {
-            throw new InvalidArgumentException(sprintf('%s expects an Eloquent model class, `%s` given.', static::class, $this->model));
-        }
+        $this->assertHashIdModel($model);
 
-        if (!in_array(HasHashId::class, class_uses_recursive($this->model), true)) {
-            throw new InvalidArgumentException(sprintf('Model `%s` must use the `%s` trait to be validated by `%s`.', $this->model, HasHashId::class, static::class));
-        }
+        $this->model = $model;
     }
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
@@ -77,5 +79,24 @@ abstract class AbstractRule implements ValidationRule
     protected function isPlainValue(mixed $value): bool
     {
         return is_int($value) || (is_string($value) && ctype_digit($value));
+    }
+
+    /**
+     * @param class-string<Model> $model
+     *
+     * @phpstan-assert class-string<Model&HasHashIdModel> $model
+     */
+    protected function assertHashIdModel(string $model): void
+    {
+        if (!is_subclass_of($model, Model::class)) {
+            throw new InvalidArgumentException(sprintf('%s expects an Eloquent model class, `%s` given.', static::class, $model));
+        }
+
+        if (
+            !is_subclass_of($model, HasHashIdModel::class)
+            && !in_array(HasHashId::class, class_uses_recursive($model), true)
+        ) {
+            throw new InvalidArgumentException(sprintf('Model `%s` must use the `%s` trait or implement the `%s` contract to be validated by `%s`.', $model, HasHashId::class, HasHashIdModel::class, static::class));
+        }
     }
 }

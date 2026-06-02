@@ -40,7 +40,6 @@ trait HasHashIdRouting
             return $this->resolveRouteBindingQuery($this, $value, $resolvedField)->first();
         }
 
-        /** @var Model|null $model */
         $model = static::findByHashId($value);
 
         return $model;
