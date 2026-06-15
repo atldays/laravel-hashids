@@ -22,8 +22,6 @@ trait HasHashIdRouting
 
     /**
      * Resolve a route binding using either the default Laravel behavior or hash IDs.
-     *
-     * @throws InvalidHashIdException
      */
     public function resolveRouteBinding($value, $field = null): ?Model
     {
@@ -40,8 +38,10 @@ trait HasHashIdRouting
             return $this->resolveRouteBindingQuery($this, $value, $resolvedField)->first();
         }
 
-        $model = static::findByHashId($value);
-
-        return $model;
+        try {
+            return static::findByHashId($value);
+        } catch (InvalidHashIdException) {
+            return null;
+        }
     }
 }

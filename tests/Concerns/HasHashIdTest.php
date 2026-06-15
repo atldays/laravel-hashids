@@ -14,6 +14,8 @@ use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithRouteBinding;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithTableSalt;
 use Atldays\HashIds\Tests\Fixtures\Models\TestUserWithTraitSalt;
 use Atldays\HashIds\Tests\TestCase;
+use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 
 class HasHashIdTest extends TestCase
@@ -467,6 +469,37 @@ class HasHashIdTest extends TestCase
         $this->assertSame($user->id, $resolved->id);
     }
 
+    public function test_it_returns_null_for_unknown_well_formed_route_binding_hash_id(): void
+    {
+        config()->set('hashid.enabled', true);
+
+        $hashId = TestUserWithRouteBinding::encodeHashId(999);
+
+        $resolved = (new TestUserWithRouteBinding)->resolveRouteBinding($hashId);
+
+        $this->assertNull($resolved);
+    }
+
+    public function test_it_returns_null_for_malformed_route_binding_hash_id(): void
+    {
+        config()->set('hashid.enabled', true);
+
+        $resolved = (new TestUserWithRouteBinding)->resolveRouteBinding('invalid-token-id');
+
+        $this->assertNull($resolved);
+    }
+
+    public function test_implicit_route_model_binding_returns_not_found_for_malformed_hash_id(): void
+    {
+        config()->set('hashid.enabled', true);
+
+        Route::get('/test-users/{user}', static function (TestUserWithRouteBinding $user) {
+            return response()->json(['id' => $user->id]);
+        })->middleware(SubstituteBindings::class);
+
+        $this->get('/test-users/invalid-token-id')->assertNotFound();
+    }
+
     public function test_it_returns_hash_id_as_route_key_when_routing_trait_is_used(): void
     {
         config()->set('hashid.enabled', true);
@@ -494,14 +527,14 @@ class HasHashIdTest extends TestCase
         $this->assertNull($resolved);
     }
 
-    public function test_it_rejects_plain_id_route_binding_when_http_hash_ids_are_enabled(): void
+    public function test_it_returns_null_for_plain_id_route_binding_when_http_hash_ids_are_enabled(): void
     {
         config()->set('hashid.enabled', true);
 
         $user = TestUserWithRouteBinding::query()->create(['name' => 'Alice']);
 
-        $this->expectException(InvalidHashIdException::class);
+        $resolved = (new TestUserWithRouteBinding)->resolveRouteBinding((string)$user->id);
 
-        (new TestUserWithRouteBinding)->resolveRouteBinding((string)$user->id);
+        $this->assertNull($resolved);
     }
 }
