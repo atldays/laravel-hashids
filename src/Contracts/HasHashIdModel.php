@@ -56,4 +56,6 @@ interface HasHashIdModel
     public function getHashIdInput(): int|string|null;
 
     public function getHashIdAttribute(): ?string;
+
+    public function getHashIdInputAttribute(): int|string|null;
 }

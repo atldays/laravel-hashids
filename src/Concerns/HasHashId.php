@@ -118,6 +118,14 @@ trait HasHashId
     }
 
     /**
+     * Accessor for the config-aware hash ID input attribute.
+     */
+    public function getHashIdInputAttribute(): int|string|null
+    {
+        return $this->getHashIdInput();
+    }
+
+    /**
      * Get the numeric source value that should be encoded for the current model.
      */
     protected function getHashIdValue(): ?int
